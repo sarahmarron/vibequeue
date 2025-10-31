@@ -1,20 +1,42 @@
-# Virtual environments
+# Python / Django ---
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg
+*.egg-info/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual envs in this folder
 .venv/
 venv/
 env/
-bin/
-lib/
+ENV/
 pyvenv.cfg
+bin/
+Lib/
+Include/
+Scripts/
 
-# Python cache
-__pycache__/
-*.pyc
-
-# Local dev files
+# Local DB & secrets (DO NOT COMMIT)
 db.sqlite3
+*.sqlite3
 .env
 *.env
 
-# OS clutter
+# Django collectstatic output
+staticfiles/
+static/
+media/
+
+# Editors / OS
+.vscode/
+.idea/
 .DS_Store
 Thumbs.db
