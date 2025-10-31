@@ -7,6 +7,18 @@ class App extends React.Component {
     details: [],
     user: "",
     quote: "",
+    message: "",
+  };
+
+  fetchMessage = () => {
+    axios
+      .get("http://localhost:8000/message/")
+      .then((res) => {
+        this.setState({ message: res.data.text });
+      })
+      .catch((err) => {
+        console.error(err);
+      });
   };
 
   componentDidMount() {
@@ -106,6 +118,20 @@ class App extends React.Component {
             Submit
           </button>
         </form>
+
+        {/* Database button */}
+        <div className="my-4">
+          <button
+            className="btn btn-success"
+            onClick={this.fetchMessage}
+          >
+            Get Message
+          </button>
+          <p className="mt-2">
+            {this.state.message && <strong>Message: </strong>}
+            {this.state.message}
+          </p>
+        </div>
 
         <hr
           style={{

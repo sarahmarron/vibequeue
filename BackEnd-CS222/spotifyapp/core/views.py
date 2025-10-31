@@ -7,7 +7,8 @@ from . credentials import REDIRECT_URI, CLIENT_ID, CLIENT_SECRET
 from requests import Request, post
 from rest_framework import status
 from .util import update_or_create_user_tokens, is_spotify_authenticated
-
+from django.http import JsonResponse
+from core.models import Message
 
 # Create your views here.
 class AuthURL(APIView):
@@ -73,3 +74,7 @@ class ReactView(APIView):
         if (serializer.is_valid(raise_exception=True)):
             serializer.save()
             return Response(serializer.data)
+        
+def get_message(request):
+    message = Message.objects.first()
+    return JsonResponse({"text": message.text if message else "No message found"})
