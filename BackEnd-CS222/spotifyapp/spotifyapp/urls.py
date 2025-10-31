@@ -17,12 +17,13 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from core.views import *
-from core.views import AuthURL, spotify_callback, IsAuthenticated
+from core.views import AuthURL, spotify_callback, IsAuthenticated, Logout
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('wel/', ReactView.as_view(), name="something"),
-    path('get-auth-url', AuthURL.as_view()),
+    path('get-auth-url/', AuthURL.as_view()),
     path('redirect', spotify_callback),
-    path('is-authenticated', IsAuthenticated.as_view())
+    path('is-authenticated/', IsAuthenticated.as_view()),
+    path('logout/', Logout.as_view())
 ]

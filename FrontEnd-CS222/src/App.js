@@ -1,27 +1,58 @@
-import './App.css';
-import React from 'react';
+import "./App.css";
+import React from "react";
 import axios from "axios";
+
+const API_BASE = process.env.REACT_APP_API_BASE || "http://127.0.0.1:8000";
 
 class App extends React.Component {
   state = {
     details: [],
     user: "",
     quote: "",
+    loadingAuth: true,
+    isAuthed: false,
+    authError: "",
   };
 
   componentDidMount() {
-    let data;
-
+    // keep existing fetch
     axios
-      .get("http://localhost:8000/wel/")
-      .then((res) => {
-        data = res.data;
-        this.setState({
-          details: data,
-        });
-      })
-      .catch((err) => {});
+      .get(`${API_BASE}/wel/`, { withCredentials: true })
+      .then((res) => this.setState({ details: res.data }))
+      .catch(() => {});
+
+    // check Spotify auth status
+    this.checkAuth();
   }
+
+  checkAuth = async () => {
+    try {
+      this.setState({ loadingAuth: true, authError: "" });
+      const res = await axios.get(`${API_BASE}/is-authenticated/`, {
+        withCredentials: true,
+      });
+      this.setState({ isAuthed: Boolean(res.data?.status) });
+    } catch (e) {
+      this.setState({ isAuthed: false, authError: "Auth check failed" });
+    } finally {
+      this.setState({ loadingAuth: false });
+    }
+  };
+
+  startLogin = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/get-auth-url/`, {
+        withCredentials: true,
+      });
+      const { url } = res.data;
+      // Always open Spotify auth page, even if already logged in
+      // window.location.href = url; // opens in same tab
+      window.open(url, "_blank");
+      // or use window.open(url, "_blank"); to open in new tab
+    } catch (e) {
+      console.error("Failed to start login", e);
+    }
+  };
 
   renderSwitch = (param) => {
     switch (param + 1) {
@@ -50,24 +81,63 @@ class App extends React.Component {
 
   handleSubmit = (e) => {
     e.preventDefault();
-
     axios
-      .post("http://localhost:8000/wel/", {
-        name: this.state.user,
-        detail: this.state.quote,
-      })
-      .then((res) => {
-        this.setState({
-          user: "",
-          quote: "",
-        });
-      })
-      .catch((err) => {});
+      .post(
+        `${API_BASE}/wel/`,
+        {
+          name: this.state.user,
+          detail: this.state.quote,
+        },
+        { withCredentials: true }
+      )
+      .then(() => this.setState({ user: "", quote: "" }))
+      .catch(() => {});
+  };
+
+  logout = async () => {
+    try {
+      await axios.post(`${API_BASE}/logout/`, null, { withCredentials: true });
+    } catch (e) {
+      // optional: console.error(e);
+    } finally {
+      // Refresh state to reflect logged-out UI
+      this.checkAuth();
+    }
   };
 
   render() {
+    const { loadingAuth, isAuthed, authError } = this.state;
+
     return (
       <div className="container jumbotron ">
+        {/* Spotify login card */}
+        <div className="card shadow-lg mb-4">
+          <div className="card-header">Spotify Login</div>
+          <div className="card-body">
+            {loadingAuth ? (
+              <p>Checking login…</p>
+            ) : isAuthed ? (
+              <div>
+                <p>✅ You’re logged in to Spotify.</p>
+                <button
+                  className="btn btn-outline-danger"
+                  onClick={this.logout}
+                >
+                  Log out
+                </button>
+              </div>
+            ) : (
+              <>
+                <p>Not logged in.</p>
+                <button className="btn btn-success" onClick={this.startLogin}>
+                  Log in with Spotify
+                </button>
+              </>
+            )}
+            {authError && <p className="text-danger mt-2">{authError}</p>}
+          </div>
+        </div>
+
         <form onSubmit={this.handleSubmit}>
           <div className="input-group mb-3">
             <div className="input-group-prepend">
@@ -132,7 +202,6 @@ class App extends React.Component {
                 >
                   <h1> {detail.detail} </h1>
                   <footer className="blockquote-footer">
-                    {" "}
                     <cite title="Source Title">{detail.name}</cite>
                   </footer>
                 </blockquote>
