@@ -6,12 +6,17 @@ from . serializer import *
 from . credentials import REDIRECT_URI, CLIENT_ID, CLIENT_SECRET
 from requests import Request, post
 from rest_framework import status
-from .util import update_or_create_user_tokens, is_spotify_authenticated
+from .util import update_or_create_user_tokens, is_spotify_authenticated, get_user_tokens
 
 
 # Create your views here.
 class AuthURL(APIView):
     def get(self, request, format=None):
+        if not request.session.session_key:
+            request.session.create()
+        # Touch the session so Django definitely sets the cookie
+        request.session['spotify_flow'] = 'starting'   # harmless flag
+        request.session.save()
         scopes = 'user-read-playback-state user-modify-playback-state user-read-currently-playing'
         url = Request('GET', 'https://accounts.spotify.com/authorize', params={
             'scope': scopes,
@@ -19,7 +24,6 @@ class AuthURL(APIView):
             'redirect_uri' : REDIRECT_URI,
             'client_id' : CLIENT_ID
         }).prepare().url
-
         return Response({'url' : url}, status=status.HTTP_200_OK)
     
 def spotify_callback(request, format=None):
@@ -30,7 +34,7 @@ def spotify_callback(request, format=None):
 
     if error:
         # Send user back with a failure flag
-        return redirect('http://localhost:3000/?authorized=false')
+        return redirect('http://127.0.0.1:3000/?authorized=false')
 
     response = post('https://accounts.spotify.com/api/token', data={
         'grant_type' : 'authorization_code',
@@ -46,12 +50,23 @@ def spotify_callback(request, format=None):
     expires_in = response.get('expires_in')
     error = response.get('error')
 
-    if not request.session.exists(request.session.session_key):
-        request.session.create()
+    if not access_token:
+        return redirect('http://127.0.0.1:3000/?authorized=false')
 
-    update_or_create_user_tokens(request.session.session_key, access_token, token_type, expires_in, refresh_token)
+    # Save tokens tied to the current session key
+    update_or_create_user_tokens(
+        request.session.session_key,
+        access_token,
+        token_type,
+        expires_in,
+        refresh_token,
+    )
 
-    return redirect('http://localhost:3000/?authorized=true')
+    # Touch + save session so Set-Cookie is guaranteed in this response
+    request.session['spotify_authed'] = True
+    request.session.save()
+
+    return redirect('http://127.0.0.1:3000/?authorized=true')
 
 class IsAuthenticated(APIView):
     def get(self, request, format=None):
@@ -59,6 +74,26 @@ class IsAuthenticated(APIView):
             request.session.create()
         is_authenticated = is_spotify_authenticated(self.request.session.session_key)
         return Response({'status' : is_authenticated}, status=status.HTTP_200_OK)
+    
+class Logout(APIView):
+    def post(self, request, format=None):
+        # Ensure there is a session key to delete tokens under
+        if not request.session.session_key:
+            request.session.create()
+        session_key = request.session.session_key
+
+        SpotifyToken.objects.filter(user=session_key).delete()
+
+        # Blow away the session (cookie cleared)
+        request.session.flush()
+
+        # Immediately create a brand new empty session so the browser
+        # has a fresh cookie for the very next action (e.g., get-auth-url)
+        request.session.create()
+        request.session['logged_out'] = True
+        request.session.save()
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class ReactView(APIView):
