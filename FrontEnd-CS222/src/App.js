@@ -9,9 +9,12 @@ const API_BASE = process.env.REACT_APP_API_BASE || "http://127.0.0.1:8000";
 class App extends React.Component {
   state = {
     details: [],
-    user: "",
-    quote: "",
+    title: "",
+    artist: "",
     message: "",
+    isAuthed: false,
+    authError: "",
+    loadingAuth: true,
   };
 
   fetchMessage = () => {
@@ -23,9 +26,6 @@ class App extends React.Component {
       .catch((err) => {
         console.error(err);
       });
-    loadingAuth: true,
-    isAuthed: false,
-    authError: "",
   };
 
   componentDidMount() {
@@ -95,17 +95,20 @@ class App extends React.Component {
 
   handleSubmit = (e) => {
     e.preventDefault();
+
+    const timestamp = new Date().toISOString();
   
     axios
-      .post("http://localhost:8000/wel/", {
-        name: this.state.user,
-        detail: this.state.quote,
+      .post("http://127.0.0.1:8000/wel/", {
+        title: this.state.title,
+        artist: this.state.artist,
+        timestamp: timestamp,
       })
       .then((res) => {
         this.setState((prev) => ({
-          details: [...prev.details, { name: prev.user, detail: prev.quote }],
-          user: "",
-          quote: "",
+          details: [...prev.details, { title: prev.title, artist: prev.artist, timestamp }],
+          title: "",
+          artist: "",
         }));
       })
       .catch((err) => {
@@ -153,8 +156,6 @@ class App extends React.Component {
           onChange={this.handleInput}
           onSubmit={this.handleSubmit}
         />
-  
-      <div className="container jumbotron ">
         {/* Spotify login card */}
         <div className="card shadow-lg mb-4">
           <div className="card-header">Spotify Login</div>
