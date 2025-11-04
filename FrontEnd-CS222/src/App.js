@@ -9,8 +9,8 @@ const API_BASE = process.env.REACT_APP_API_BASE || "http://127.0.0.1:8000";
 class App extends React.Component {
   state = {
     details: [],
-    user: "",
-    quote: "",
+    title: "",
+    artist: "",
     message: "",
     isAuthed: false,
     authError: "",
@@ -95,17 +95,22 @@ class App extends React.Component {
 
   handleSubmit = (e) => {
     e.preventDefault();
+
+    const timestamp = new Date().toISOString();
   
     axios
       .post("http://127.0.0.1:8000/wel/", {
+        title: this.state.title,
+        artist: this.state.artist,
+        timestamp: timestamp,
         name: this.state.user,
         detail: this.state.quote,
       })
       .then((res) => {
         this.setState((prev) => ({
-          details: [...prev.details, { name: prev.user, detail: prev.quote }],
-          user: "",
-          quote: "",
+          details: [...prev.details, { title: prev.title, artist: prev.artist, timestamp }],
+          title: "",
+          artist: "",
         }));
       })
       .catch((err) => {
@@ -180,45 +185,6 @@ class App extends React.Component {
             {authError && <p className="text-danger mt-2">{authError}</p>}
           </div>
         </div>
-
-        <form onSubmit={this.handleSubmit}>
-          <div className="input-group mb-3">
-            <div className="input-group-prepend">
-              <span className="input-group-text" id="basic-addon1">
-                {" "}
-                Author{" "}
-              </span>
-            </div>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="Name of the Poet/Author"
-              aria-label="Username"
-              aria-describedby="basic-addon1"
-              value={this.state.user}
-              name="user"
-              onChange={this.handleInput}
-            />
-          </div>
-
-          <div className="input-group mb-3">
-            <div className="input-group-prepend">
-              <span className="input-group-text">Your Quote</span>
-            </div>
-            <textarea
-              className="form-control "
-              aria-label="With textarea"
-              placeholder="Tell us what you think of ....."
-              value={this.state.quote}
-              name="quote"
-              onChange={this.handleInput}
-            ></textarea>
-          </div>
-
-          <button type="submit" className="btn btn-primary mb-5">
-            Submit
-          </button>
-        </form>
 
         {/* Database button */}
         <div className="my-4">

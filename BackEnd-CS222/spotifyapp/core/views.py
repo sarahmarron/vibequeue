@@ -112,6 +112,20 @@ class ReactView(APIView):
             serializer.save()
             return Response(serializer.data)
         
+class SongView(APIView):
+    def get(self, request):
+        songs = Song.objects.all().order_by("id")
+        serializer = SongSerializer(songs, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        serializer = SongSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
 def get_message(request):
     message = Message.objects.first()
     return JsonResponse({"text": message.text if message else "No message found"})
+
