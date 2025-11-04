@@ -12,20 +12,20 @@ class App extends React.Component {
     user: "",
     quote: "",
     message: "",
+    isAuthed: false,
+    authError: "",
+    loadingAuth: true,
   };
 
   fetchMessage = () => {
     axios
-      .get("http://127.0.0.1:8000/message/")
+      .get("http://localhost:8000/message/")
       .then((res) => {
         this.setState({ message: res.data.text });
       })
       .catch((err) => {
         console.error(err);
       });
-    loadingAuth: true,
-    isAuthed: false,
-    authError: "",
   };
 
   componentDidMount() {
@@ -153,8 +153,6 @@ class App extends React.Component {
           onChange={this.handleInput}
           onSubmit={this.handleSubmit}
         />
-  
-      <div className="container jumbotron ">
         {/* Spotify login card */}
         <div className="card shadow-lg mb-4">
           <div className="card-header">Spotify Login</div>
