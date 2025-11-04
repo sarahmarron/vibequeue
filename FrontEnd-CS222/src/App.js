@@ -103,6 +103,8 @@ class App extends React.Component {
         title: this.state.title,
         artist: this.state.artist,
         timestamp: timestamp,
+        name: this.state.user,
+        detail: this.state.quote,
       })
       .then((res) => {
         this.setState((prev) => ({
