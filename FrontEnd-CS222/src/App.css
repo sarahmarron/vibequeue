@@ -1,30 +1,15 @@
-/* Base container: split into two columns */
+/* Center everything and give breathing room */
 .App {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  padding: 40px;
-  gap: 40px;
+  max-width: 750px;
+  margin: 40px auto;
+  padding: 24px;
   font-family: "Inter", sans-serif;
-}
-
-/* Left column: form area */
-.form-section {
-  flex: 1;
-  max-width: 350px;
-}
-
-/* Right column: quote display area */
-.quotes-section {
-  flex: 2;
-  display: flex;
-  flex-direction: column;
 }
 
 /* Headings */
 h1, h2 {
+  text-align: center;
   color: #222;
-  margin-bottom: 16px;
 }
 
 /* Prompt form */
@@ -32,6 +17,7 @@ form {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  margin-bottom: 24px;
 }
 
 /* Inputs */
@@ -59,36 +45,59 @@ button:hover {
   background-color: #0056b3;
 }
 
-/* Quote cards on right */
+/* Quote cards */
 .card {
-  background-color: white;
   border-radius: 8px;
-  margin-bottom: 16px;
-  padding: 16px;
+  margin: 16px 0;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  max-width: 600px;
 }
-
 .card-header {
   font-weight: 600;
-  margin-bottom: 8px;
 }
-
 blockquote {
   margin: 0;
   padding: 0;
-  font-style: italic;
-  color: #444;
 }
 
-/* Make layout stack vertically on smaller screens */
-@media (max-width: 768px) {
-  .App {
-    flex-direction: column;
-    align-items: center;
-  }
 
-  .form-section, .quotes-section {
-    max-width: 100%;
+
+/*
+.App {
+  text-align: center;
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
   }
 }
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+  */
