@@ -1,6 +1,8 @@
 import "./App.css";
 import React from "react";
 import axios from "axios";
+import PromptBox from "./PromptBox";
+import QueueList from "./QueueList";
 
 const API_BASE = process.env.REACT_APP_API_BASE || "http://127.0.0.1:8000";
 
@@ -81,6 +83,28 @@ class App extends React.Component {
 
   handleSubmit = (e) => {
     e.preventDefault();
+  
+    axios
+      .post("http://localhost:8000/wel/", {
+        name: this.state.user,
+        detail: this.state.quote,
+      })
+      .then((res) => {
+        this.setState((prev) => ({
+          details: [...prev.details, { name: prev.user, detail: prev.quote }],
+          user: "",
+          quote: "",
+        }));
+      })
+      .catch((err) => {
+        console.error(err);
+        // Optional: still show locally if backend isn't running
+        this.setState((prev) => ({
+          details: [...prev.details, { name: prev.user, detail: prev.quote }],
+          user: "",
+          quote: "",
+        }));
+      });
     axios
       .post(
         `${API_BASE}/wel/`,
@@ -109,6 +133,15 @@ class App extends React.Component {
     const { loadingAuth, isAuthed, authError } = this.state;
 
     return (
+      <div className="App container jumbotron">
+        {/* Replace the entire form with PromptBox */}
+        <PromptBox
+          user={this.state.user}
+          quote={this.state.quote}
+          onChange={this.handleInput}
+          onSubmit={this.handleSubmit}
+        />
+  
       <div className="container jumbotron ">
         {/* Spotify login card */}
         <div className="card shadow-lg mb-4">
@@ -185,6 +218,12 @@ class App extends React.Component {
             borderColor: "#000000",
           }}
         />
+  
+        {/* Replace the map section with QueueList */}
+        <QueueList
+          items={this.state.details}
+          colorForIndex={(i) => this.renderSwitch(i % 6)}
+        />
 
         {this.state.details.map((detail, id) => (
           <div key={id}>
@@ -213,6 +252,7 @@ class App extends React.Component {
       </div>
     );
   }
+  
 }
 
 export default App;
