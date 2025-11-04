@@ -19,7 +19,7 @@ class App extends React.Component {
 
   fetchMessage = () => {
     axios
-      .get("http://localhost:8000/message/")
+      .get("http://127.0.0.1:8000/message/")
       .then((res) => {
         this.setState({ message: res.data.text });
       })
@@ -97,7 +97,7 @@ class App extends React.Component {
     e.preventDefault();
   
     axios
-      .post("http://localhost:8000/wel/", {
+      .post("http://127.0.0.1:8000/wel/", {
         name: this.state.user,
         detail: this.state.quote,
       })
