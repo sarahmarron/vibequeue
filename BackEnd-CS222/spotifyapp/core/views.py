@@ -11,6 +11,7 @@ from django.http import JsonResponse
 from core.models import Message
 from .util import update_or_create_user_tokens, is_spotify_authenticated, get_user_tokens
 
+from .openai_client import get_song_recommendations_from_gpt
 
 # Create your views here.
 class AuthURL(APIView):
@@ -129,3 +130,29 @@ def get_message(request):
     message = Message.objects.first()
     return JsonResponse({"text": message.text if message else "No message found"})
 
+
+# GPT Song Rec
+class GPTSongRecView(APIView):
+    """
+    POST { "prompt": "happy cheerful spring songs" }
+    """
+
+    def post(self, request):
+        prompt = request.data.get("prompt", "").strip()
+        if not prompt:
+            return Response(
+                {"error": "Missing 'prompt' field"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        songs_data = get_song_recommendations_from_gpt(prompt)  
+
+        created_songs = []
+        for s in songs_data:
+            title = s.get("title")
+            artist = s.get("artist")
+            if title and artist:
+                created_songs.append(Song.objects.create(title=title, artist=artist))
+
+        serializer = SongSerializer(created_songs, many=True)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
