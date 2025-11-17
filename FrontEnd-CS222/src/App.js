@@ -140,6 +140,18 @@ class App extends React.Component {
       .catch(() => {});
   };
 
+  playSong = (uri) => {
+    axios.put(`${API_BASE}/play/`, { uri })
+      .then(res => console.log("Playing", uri))
+      .catch(err => console.error("Play failed", err));
+  };
+  
+  pauseSong = () => {
+    axios.put(`${API_BASE}/pause/`)
+      .then(() => console.log("Paused"))
+      .catch(err => console.error("Pause failed", err));
+  };
+  
   logout = async () => {
     try {
       await axios.post(`${API_BASE}/logout/`, null, { withCredentials: true });
