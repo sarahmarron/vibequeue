@@ -6,10 +6,9 @@ from . serializer import *
 from . credentials import REDIRECT_URI, CLIENT_ID, CLIENT_SECRET
 from requests import Request, post
 from rest_framework import status
-from .util import update_or_create_user_tokens, is_spotify_authenticated
 from django.http import JsonResponse
 from core.models import Message
-from .util import update_or_create_user_tokens, is_spotify_authenticated, get_user_tokens
+from .util import update_or_create_user_tokens, is_spotify_authenticated, get_user_tokens, spotify_api_request
 
 
 # Create your views here.
@@ -129,3 +128,33 @@ def get_message(request):
     message = Message.objects.first()
     return JsonResponse({"text": message.text if message else "No message found"})
 
+class Devices(APIView):
+    def get(self, request, format=None):
+        if not request.session.session_key:
+            request.session.create()
+        code, data = spotify_api_request(request.session.session_key, "GET", "/me/player/devices")
+        return Response(data, status=code or status.HTTP_401_UNAUTHORIZED)
+
+class SearchTracks(APIView):
+    def get(self, request, format=None):
+        if not request.session.session_key:
+            request.session.session_key or request.session.create()
+
+        q = (request.GET.get("q") or "").strip()
+        if not q:
+            return Response({"error": "missing q"}, status=status.HTTP_400_BAD_REQUEST)
+
+        params = {"q": q, "type": "track", "limit": 10}
+        code, data = spotify_api_request(request.session.session_key, "GET", "/search", params=params)
+
+        items = []
+        for t in (data.get("tracks", {}).get("items", []) if data else []):
+            items.append({
+                "id": t.get("id"),
+                "uri": t.get("uri"),
+                "name": t.get("name"),
+                "artist": ", ".join(a["name"] for a in t.get("artists", [])),
+                "album": (t.get("album") or {}).get("name"),
+                "image": ((t.get("album") or {}).get("images") or [{}])[0].get("url"),
+            })
+        return Response({"items": items}, status=code or status.HTTP_401_UNAUTHORIZED)
