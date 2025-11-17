@@ -1,0 +1,19 @@
+CREATE a .env file inside of spotifyapp and fill these in (they won't be committed due to .gitignore)
+
+FILL in only the openai key for now, later when we clean stuff up we will put other keys and secrets here too
+some have already been committed but just focus on putting my API key in
+
+REMEMBER, do not put it in this file, create a .env file inside BackEnd-CS222/spotifyapp
+
+.env file (fill in the other ones later, just put OPENAI_API_KEY in ur .env, not the others):
+OPENAI_API_KEY="sk-..."
+
+
+
+
+
+
+dont put it in yet
+CLIENT_ID = 
+CLIENT_SECRET = 
+REDIRECT_URI = 
