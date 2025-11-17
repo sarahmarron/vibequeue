@@ -28,6 +28,8 @@ from core.views import (
     get_message,
     Devices,
     SearchTracks,
+    Play,
+    Pause,
 )
 
 urlpatterns = [
@@ -43,6 +45,9 @@ urlpatterns = [
     path("songs/", SongView.as_view(), name="songs"),
     path("devices/", Devices.as_view()),
     path("search/", SearchTracks.as_view()),
+
+    path("play/", Play.as_view()),
+    path("pause", Pause.as_view()),
 
     # song recs w gpt
     path("song-recs/", GPTSongRecView.as_view(), name="song-recs"),

@@ -185,3 +185,27 @@ class GPTSongRecView(APIView):
 
         serializer = SongSerializer(created_songs, many=True)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+class Play(APIView):
+    def put(self, request, format=None):
+        if not request.session.session_key:
+            request.session.create()
+        uri = request.data.get("uri")
+        device_id = request.data.get("device_id")
+        if not uri:
+            return Response({"error": "missing uri"}, status=status.HTTP_400_BAD_REQUEST)
+
+        params = {"device_id": device_id} if device_id else None
+        body = {"uris": [uri]}
+        code, data = spotify_api_request(request.session.session_key, "PUT", "/me/player/play", json=body, params=params)
+        # 204 is success here
+        return Response(data or {}, status=code or status.HTTP_401_UNAUTHORIZED)
+
+class Pause(APIView):
+    def put(self, request, format=None):
+        if not request.session.session_key:
+            request.session.create()
+        device_id = request.data.get("device_id")
+        params = {"device_id": device_id} if device_id else None
+        code, data = spotify_api_request(request.session.session_key, "PUT", "/me/player/pause", params=params)
+        return Response(data or {}, status=code or status.HTTP_401_UNAUTHORIZED)
