@@ -215,30 +215,6 @@ class App extends React.Component {
           colorForIndex={(i) => this.renderSwitch(i % 6)}
         />
 
-        {this.state.details.map((detail, id) => (
-          <div key={id}>
-            <div className="card shadow-lg">
-              <div
-                className={"bg-" + this.renderSwitch(id % 6) + " card-header"}
-              >
-                Quote {id + 1}
-              </div>
-              <div className="card-body">
-                <blockquote
-                  className={
-                    "text-" + this.renderSwitch(id % 6) + " blockquote mb-0"
-                  }
-                >
-                  <h1> {detail.detail} </h1>
-                  <footer className="blockquote-footer">
-                    <cite title="Source Title">{detail.name}</cite>
-                  </footer>
-                </blockquote>
-              </div>
-            </div>
-            <span className="border border-primary "></span>
-          </div>
-        ))}
       </div>
     );
   }
