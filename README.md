@@ -60,3 +60,12 @@ cd FrontEnd-CS222
 npm install
 npm start
 ```
+### 6. Adding OpenAI API key
+- Create a .env file in
+```bash
+BackEnd-CS222/spotifyapp/
+```
+- With the following line and enter the key (saved in Slack)
+```bash
+OPENAI_API_KEY=""
+```
