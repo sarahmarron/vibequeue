@@ -3,22 +3,17 @@ import React from "react";
 export default function QueueList({ items, colorForIndex }) {
   return (
     <>
-      {items.map((detail, id) => (
-        <div key={id}>
-          <div className="card shadow-lg">
-            <div className={`bg-${colorForIndex(id)} card-header`}>
-              Quote {id + 1}
+      {items.map((song, idx) => (
+        <div key={song.id ?? idx}>
+          <div className="card shadow-lg mb-3">
+            <div className={`bg-${colorForIndex(idx)} card-header`}>
+              Song {idx + 1}
             </div>
             <div className="card-body">
-              <blockquote className={`text-${colorForIndex(id)} blockquote mb-0`}>
-                <h1>{detail.detail}</h1>
-                <footer className="blockquote-footer">
-                  <cite title="Source Title">{detail.name}</cite>
-                </footer>
-              </blockquote>
+              <h3 className="mb-1">{song.title}</h3>
+              <p className="text-muted mb-0">{song.artist}</p>
             </div>
           </div>
-          <span className="border border-primary "></span>
         </div>
       ))}
     </>

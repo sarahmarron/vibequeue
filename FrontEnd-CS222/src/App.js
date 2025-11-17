@@ -11,6 +11,7 @@ class App extends React.Component {
     details: [],
     title: "",
     artist: "",
+    recPrompt: "",   // text for GPT song recommendations
     message: "",
     isAuthed: false,
     authError: "",
@@ -31,7 +32,7 @@ class App extends React.Component {
   componentDidMount() {
     // keep existing fetch
     axios
-      .get(`${API_BASE}/wel/`, { withCredentials: true })
+      .get(`${API_BASE}/songs/`, { withCredentials: true }) // now loads songs from backend
       .then((res) => this.setState({ details: res.data }))
       .catch(() => {});
 
@@ -96,43 +97,48 @@ class App extends React.Component {
   handleSubmit = (e) => {
     e.preventDefault();
 
-    const timestamp = new Date().toISOString();
-  
+    const { title, artist } = this.state;
+    if (!title || !artist) {
+      return; // don't submit empty songs
+    }
+
     axios
-      .post("http://127.0.0.1:8000/wel/", {
-        title: this.state.title,
-        artist: this.state.artist,
-        timestamp: timestamp,
-        name: this.state.user,
-        detail: this.state.quote,
+      .post(`${API_BASE}/songs/`, {
+        title,
+        artist,
       })
       .then((res) => {
+        // append the created Song from backend
         this.setState((prev) => ({
-          details: [...prev.details, { title: prev.title, artist: prev.artist, timestamp }],
+          details: [...prev.details, res.data],
           title: "",
           artist: "",
         }));
       })
       .catch((err) => {
-        console.error(err);
-        // Optional: still show locally if backend isn't running
-        this.setState((prev) => ({
-          details: [...prev.details, { name: prev.user, detail: prev.quote }],
-          user: "",
-          quote: "",
-        }));
+        console.error("Failed to save song", err);
       });
+  };
+
+  // call backend GPT endpoint to generate + save song recs
+  handleSongRecs = (e) => {
+    e.preventDefault();
+
+    const { recPrompt } = this.state;
+    if (!recPrompt) return;
+
     axios
-      .post(
-        `${API_BASE}/wel/`,
-        {
-          name: this.state.user,
-          detail: this.state.quote,
-        },
-        { withCredentials: true }
-      )
-      .then(() => this.setState({ user: "", quote: "" }))
-      .catch(() => {});
+      .post(`${API_BASE}/song-recs/`, { prompt: recPrompt })
+      .then((res) => {
+        // res.data is an array of Song objects created by backend
+        this.setState((prev) => ({
+          details: [...prev.details, ...res.data],
+          recPrompt: "",
+        }));
+      })
+      .catch((err) => {
+        console.error("Failed to get GPT song recs", err);
+      });
   };
 
   logout = async () => {
@@ -153,11 +159,39 @@ class App extends React.Component {
       <div className="App container jumbotron">
         {/* Replace the entire form with PromptBox */}
         <PromptBox
-          user={this.state.user}
-          quote={this.state.quote}
+          title={this.state.title}
+          artist={this.state.artist}
           onChange={this.handleInput}
           onSubmit={this.handleSubmit}
         />
+
+        {/* GPT Song Recommendations */}
+        <div className="card shadow-lg mb-4">
+          <div className="card-header">GPT Song Recommendations</div>
+          <div className="card-body">
+            <div className="input-group mb-3">
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Describe the vibe (e.g. 'happy cheerful spring songs')"
+                name="recPrompt"
+                value={this.state.recPrompt}
+                onChange={this.handleInput}
+              />
+              <button
+                className="btn btn-primary"
+                onClick={this.handleSongRecs}
+                disabled={!this.state.recPrompt}
+              >
+                Get Recommendations
+              </button>
+            </div>
+            <small className="text-muted">
+              GPT songs are saved to the database and shown in the list below.
+            </small>
+          </div>
+        </div>
+
         {/* Spotify login card */}
         <div className="card shadow-lg mb-4">
           <div className="card-header">Spotify Login</div>
@@ -208,41 +242,15 @@ class App extends React.Component {
             borderColor: "#000000",
           }}
         />
-  
+
         {/* Replace the map section with QueueList */}
         <QueueList
           items={this.state.details}
           colorForIndex={(i) => this.renderSwitch(i % 6)}
         />
-
-        {this.state.details.map((detail, id) => (
-          <div key={id}>
-            <div className="card shadow-lg">
-              <div
-                className={"bg-" + this.renderSwitch(id % 6) + " card-header"}
-              >
-                Quote {id + 1}
-              </div>
-              <div className="card-body">
-                <blockquote
-                  className={
-                    "text-" + this.renderSwitch(id % 6) + " blockquote mb-0"
-                  }
-                >
-                  <h1> {detail.detail} </h1>
-                  <footer className="blockquote-footer">
-                    <cite title="Source Title">{detail.name}</cite>
-                  </footer>
-                </blockquote>
-              </div>
-            </div>
-            <span className="border border-primary "></span>
-          </div>
-        ))}
       </div>
     );
   }
-  
 }
 
 export default App;

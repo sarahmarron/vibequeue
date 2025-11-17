@@ -15,20 +15,35 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path, include
-from core.views import *
-from core.views import AuthURL, spotify_callback, IsAuthenticated, Logout, SongView, Devices, get_message, SearchTracks
+from django.urls import path
+
+from core.views import (
+    ReactView,
+    AuthURL,
+    spotify_callback,
+    IsAuthenticated,
+    Logout,
+    SongView,
+    GPTSongRecView,
+    get_message,
+    Devices,
+    SearchTracks,
+)
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('wel/', ReactView.as_view(), name="something"),
-    path('message/', get_message, name="get-message"),
-    path('get-auth-url', AuthURL.as_view()),
-    path('get-auth-url/', AuthURL.as_view()),
-    path('redirect', spotify_callback),
-    path('is-authenticated/', IsAuthenticated.as_view()),
-    path('logout/', Logout.as_view()),
+    path("admin/", admin.site.urls),
+    path("wel/", ReactView.as_view(), name="something"),
+    path("message/", get_message, name="get-message"),
+    path("get-auth-url", AuthURL.as_view()),
+    path("get-auth-url/", AuthURL.as_view()),
+    path("redirect", spotify_callback),
+    path("is-authenticated/", IsAuthenticated.as_view()),
+    path("logout/", Logout.as_view()),
+
     path("songs/", SongView.as_view(), name="songs"),
-    path('devices/', Devices.as_view()),
-    path('search/', SearchTracks.as_view())
+    path("devices/", Devices.as_view()),
+    path("search/", SearchTracks.as_view()),
+
+    # song recs w gpt
+    path("song-recs/", GPTSongRecView.as_view(), name="song-recs"),
 ]
