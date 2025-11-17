@@ -3,12 +3,15 @@ import React from "react";
 import axios from "axios";
 import PromptBox from "./PromptBox";
 import QueueList from "./QueueList";
+import GPTRecs from "./GPTRecs";
+
 
 const API_BASE = process.env.REACT_APP_API_BASE || "http://127.0.0.1:8000";
 
 class App extends React.Component {
   state = {
     details: [],
+    gptRecs: [],
     title: "",
     artist: "",
     message: "",
@@ -107,8 +110,10 @@ class App extends React.Component {
         detail: this.state.quote,
       })
       .then((res) => {
+        const songs = res.data;
+        // append the created Song from backend
         this.setState((prev) => ({
-          details: [...prev.details, { title: prev.title, artist: prev.artist, timestamp }],
+          gptRecs: [ ...prev.gptRecs, { prompt: this.state.recPrompt, songs } ],
           title: "",
           artist: "",
         }));
@@ -158,6 +163,38 @@ class App extends React.Component {
           onChange={this.handleInput}
           onSubmit={this.handleSubmit}
         />
+
+        {/* GPT Song Recommendations */}
+        <div className="card shadow-lg mb-4">
+          <div className="card-header">GPT Song Recommendations</div>
+          <div className="card-body">
+            <div className="input-group mb-3">
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Describe the vibe (e.g. 'happy cheerful spring songs')"
+                name="recPrompt"
+                value={this.state.recPrompt}
+                onChange={this.handleInput}
+              />
+              <button
+                className="btn btn-primary"
+                onClick={this.handleSongRecs}
+                disabled={!this.state.recPrompt}
+              >
+                Get Recommendations
+              </button>
+            </div>
+            <small className="text-muted">
+              GPT songs are saved to the database and shown in the list below.
+            </small>
+          </div>
+        </div>
+        
+        {this.state.gptRecs.map((block, i) => (
+          <GPTRecs key={i} prompt={block.prompt} songs={block.songs} />
+        ))}
+
         {/* Spotify login card */}
         <div className="card shadow-lg mb-4">
           <div className="card-header">Spotify Login</div>
