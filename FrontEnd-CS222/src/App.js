@@ -3,6 +3,7 @@ import React from "react";
 import axios from "axios";
 import PromptBox from "./PromptBox";
 import QueueList from "./QueueList";
+import GraphView from "./GraphView";
 
 const API_BASE = process.env.REACT_APP_API_BASE || "http://127.0.0.1:8000";
 
@@ -248,6 +249,10 @@ class App extends React.Component {
           items={this.state.details}
           colorForIndex={(i) => this.renderSwitch(i % 6)}
         />
+        
+        {/* Graphical View of User Inputs */}
+        <GraphView items={this.state.details} />
+
       </div>
     );
   }
