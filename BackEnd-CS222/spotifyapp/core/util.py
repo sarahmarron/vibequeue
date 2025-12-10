@@ -85,3 +85,25 @@ def spotify_api_request(session_id, method, endpoint, json=None, params=None):
     except Exception:
         data = {}
     return resp.status_code, data
+
+def spotify_search_track_uri(session_id, title: str, artist: str | None = None) -> str | None:
+    if not title:
+        return None
+    q = f'track:"{title}"'
+    if artist:
+        q += f' artist:"{artist}"'
+    params = {"q": q, "type": "track", "limit": 1}
+    code, data = spotify_api_request(session_id, "GET", "/search", params=params)
+    if code and code >= 200 and code < 300:
+        items = (data.get("tracks", {}) or {}).get("items", []) if isinstance(data, dict) else []
+        if items:
+            return items[0].get("uri")
+    return None
+
+def spotify_add_to_queue(session_id, uri: str, device_id: str | None = None):
+    if not uri:
+        return 400, {"error": "missing uri"}
+    params = {"uri": uri}
+    if device_id:
+        params["device_id"] = device_id
+    return spotify_api_request(session_id, "POST", "/me/player/queue", params=params)

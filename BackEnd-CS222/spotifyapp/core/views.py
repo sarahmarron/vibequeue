@@ -8,7 +8,7 @@ from requests import Request, post
 from rest_framework import status
 from django.http import JsonResponse
 from core.models import Message
-from .util import update_or_create_user_tokens, is_spotify_authenticated, get_user_tokens, spotify_api_request
+from .util import update_or_create_user_tokens, is_spotify_authenticated, get_user_tokens, spotify_api_request, spotify_add_to_queue, spotify_search_track_uri
 
 from .openai_client import get_song_recommendations_from_gpt
 
@@ -209,3 +209,47 @@ class Pause(APIView):
         params = {"device_id": device_id} if device_id else None
         code, data = spotify_api_request(request.session.session_key, "PUT", "/me/player/pause", params=params)
         return Response(data or {}, status=code or status.HTTP_401_UNAUTHORIZED)
+    
+class QueueLatestFiveSongs(APIView):
+    def post(self, request, format=None):
+        if not request.session.session_key:
+            request.session.create()
+        session_key = request.session.session_key
+
+        # Get the latest 5 songs you saved (by timestamp desc)
+        songs = list(Song.objects.order_by("-timestamp")[:5])  # title, artist, timestamp
+
+        if not songs:
+            return Response({"error": "No songs found to queue."}, status=404)
+
+        device_id = request.data.get("device_id")
+        results = []
+        for s in reversed(songs):  # keep original chronological order when queuing
+            uri = spotify_search_track_uri(session_key, s.title, s.artist)
+            if not uri:
+                results.append({"title": s.title, "artist": s.artist, "uri": None, "status": 404})
+                continue
+            code, data = spotify_add_to_queue(session_key, uri, device_id=device_id)
+            results.append({"title": s.title, "artist": s.artist, "uri": uri, "status": code})
+
+        ok = all(r["status"] == 204 for r in results if r["uri"])
+        return Response({"queued": results}, status=200 if ok else 207)
+
+
+class PlayPauseToggle(APIView):
+    def post(self, request, format=None):
+        if not request.session.session_key:
+            request.session.create()
+        session_key = request.session.session_key
+
+        code, data = spotify_api_request(session_key, "GET", "/me/player/currently-playing")
+        is_playing = isinstance(data, dict) and data.get("is_playing")
+
+        if is_playing:
+            code2, data2 = spotify_api_request(session_key, "PUT", "/me/player/pause")
+            new_state = False
+        else:
+            code2, data2 = spotify_api_request(session_key, "PUT", "/me/player/play")
+            new_state = True
+
+        return Response({"is_playing": new_state}, status=code2 or 200)

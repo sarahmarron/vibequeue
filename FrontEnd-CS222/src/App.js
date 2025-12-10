@@ -122,6 +122,29 @@ class App extends React.Component {
       });
   };
 
+  queueLatest = async () => {
+    try {
+      await axios.post(`${API_BASE}/queue-latest/`, null, {
+        withCredentials: true,
+      });
+      // optional toast:
+      alert("Queued latest 5 recommendations in Spotify");
+    } catch (e) {
+      console.error("Failed to queue latest songs", e);
+    }
+  };
+
+  togglePlayPause = async () => {
+    try {
+      const res = await axios.post(`${API_BASE}/play-toggle/`, null, {
+        withCredentials: true,
+      });
+      // optional: use res.data.is_playing if you want to reflect UI state
+    } catch (e) {
+      console.error("Failed to toggle play/pause", e);
+    }
+  };
+
   // call backend GPT endpoint to generate + save song recs
   handleSongRecs = (e) => {
     e.preventDefault();
@@ -137,6 +160,7 @@ class App extends React.Component {
           details: [...prev.details, ...res.data],
           recPrompt: "",
         }));
+        return this.queueLatest();
       })
       .catch((err) => {
         console.error("Failed to get GPT song recs", err);
@@ -193,7 +217,17 @@ class App extends React.Component {
             </small>
           </div>
         </div>
-
+        {/* Play/Pause toggle (separate button) */}
+        {this.state.isAuthed && (
+          <div className="mb-4">
+            <button
+              className="btn btn-outline-dark"
+              onClick={this.togglePlayPause}
+            >
+              ⏯️ Play / Pause
+            </button>
+          </div>
+        )}
         {/* Spotify login card */}
         <div className="card shadow-lg mb-4">
           <div className="card-header">Spotify Login</div>

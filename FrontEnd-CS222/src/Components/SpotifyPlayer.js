@@ -86,7 +86,7 @@ class SpotifyPlayer extends React.Component {
 
     return (
       <div className="card shadow-lg mb-4">
-        <div className="card-header">🎵 Spotify Player</div>
+        <div className="card-header">Spotify Player</div>
         <div className="card-body">
           {/* Device selection */}
           <div className="mb-3">
