@@ -30,6 +30,8 @@ from core.views import (
     SearchTracks,
     Play,
     Pause,
+    QueueLatestFiveSongs,
+    PlayPauseToggle,
 )
 
 urlpatterns = [
@@ -51,4 +53,7 @@ urlpatterns = [
 
     # song recs w gpt
     path("song-recs/", GPTSongRecView.as_view(), name="song-recs"),
+
+    path("queue-latest/", QueueLatestFiveSongs.as_view()),
+    path("play-toggle/", PlayPauseToggle.as_view()),
 ]
