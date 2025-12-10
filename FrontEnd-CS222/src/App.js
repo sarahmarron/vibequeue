@@ -4,6 +4,7 @@ import axios from "axios";
 import PromptBox from "./PromptBox";
 import QueueList from "./QueueList";
 import GraphView from "./GraphView";
+import SpotifyPlayer from "./Components/SpotifyPlayer.js";
 
 const API_BASE = process.env.REACT_APP_API_BASE || "http://127.0.0.1:8000";
 
@@ -12,7 +13,7 @@ class App extends React.Component {
     details: [],
     title: "",
     artist: "",
-    recPrompt: "",   // text for GPT song recommendations
+    recPrompt: "", // text for GPT song recommendations
     message: "",
     isAuthed: false,
     authError: "",
@@ -221,12 +222,12 @@ class App extends React.Component {
           </div>
         </div>
 
+        {/* Spotify playback section */}
+        {this.state.isAuthed && <SpotifyPlayer />}
+
         {/* Database button */}
         <div className="my-4">
-          <button
-            className="btn btn-success"
-            onClick={this.fetchMessage}
-          >
+          <button className="btn btn-success" onClick={this.fetchMessage}>
             Get Message
           </button>
           <p className="mt-2">
@@ -249,10 +250,9 @@ class App extends React.Component {
           items={this.state.details}
           colorForIndex={(i) => this.renderSwitch(i % 6)}
         />
-        
+
         {/* Graphical View of User Inputs */}
         <GraphView items={this.state.details} />
-
       </div>
     );
   }
