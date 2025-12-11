@@ -6,11 +6,11 @@ from . serializer import *
 from . credentials import REDIRECT_URI, CLIENT_ID, CLIENT_SECRET
 from requests import Request, post
 from rest_framework import status
-from .util import update_or_create_user_tokens, is_spotify_authenticated
 from django.http import JsonResponse
 from core.models import Message
-from .util import update_or_create_user_tokens, is_spotify_authenticated, get_user_tokens
+from .util import update_or_create_user_tokens, is_spotify_authenticated, get_user_tokens, spotify_api_request, spotify_add_to_queue, spotify_search_track_uri
 
+from .openai_client import get_song_recommendations_from_gpt
 
 # Create your views here.
 class AuthURL(APIView):
@@ -129,3 +129,127 @@ def get_message(request):
     message = Message.objects.first()
     return JsonResponse({"text": message.text if message else "No message found"})
 
+class Devices(APIView):
+    def get(self, request, format=None):
+        if not request.session.session_key:
+            request.session.create()
+        code, data = spotify_api_request(request.session.session_key, "GET", "/me/player/devices")
+        return Response(data, status=code or status.HTTP_401_UNAUTHORIZED)
+
+class SearchTracks(APIView):
+    def get(self, request, format=None):
+        if not request.session.session_key:
+            request.session.session_key or request.session.create()
+
+        q = (request.GET.get("q") or "").strip()
+        if not q:
+            return Response({"error": "missing q"}, status=status.HTTP_400_BAD_REQUEST)
+
+        params = {"q": q, "type": "track", "limit": 10}
+        code, data = spotify_api_request(request.session.session_key, "GET", "/search", params=params)
+
+        items = []
+        for t in (data.get("tracks", {}).get("items", []) if data else []):
+            items.append({
+                "id": t.get("id"),
+                "uri": t.get("uri"),
+                "name": t.get("name"),
+                "artist": ", ".join(a["name"] for a in t.get("artists", [])),
+                "album": (t.get("album") or {}).get("name"),
+                "image": ((t.get("album") or {}).get("images") or [{}])[0].get("url"),
+            })
+        return Response({"items": items}, status=code or status.HTTP_401_UNAUTHORIZED)
+
+# GPT Song Rec
+class GPTSongRecView(APIView):
+    """
+    POST { "prompt": "happy cheerful spring songs" }
+    """
+
+    def post(self, request):
+        prompt = request.data.get("prompt", "").strip()
+        if not prompt:
+            return Response(
+                {"error": "Missing 'prompt' field"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        songs_data = get_song_recommendations_from_gpt(prompt)  
+
+        created_songs = []
+        for s in songs_data:
+            title = s.get("title")
+            artist = s.get("artist")
+            if title and artist:
+                created_songs.append(Song.objects.create(title=title, artist=artist))
+
+        serializer = SongSerializer(created_songs, many=True)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+class Play(APIView):
+    def put(self, request, format=None):
+        if not request.session.session_key:
+            request.session.create()
+        uri = request.data.get("uri")
+        device_id = request.data.get("device_id")
+        if not uri:
+            return Response({"error": "missing uri"}, status=status.HTTP_400_BAD_REQUEST)
+
+        params = {"device_id": device_id} if device_id else None
+        body = {"uris": [uri]}
+        code, data = spotify_api_request(request.session.session_key, "PUT", "/me/player/play", json=body, params=params)
+        # 204 is success here
+        return Response(data or {}, status=code or status.HTTP_401_UNAUTHORIZED)
+
+class Pause(APIView):
+    def put(self, request, format=None):
+        if not request.session.session_key:
+            request.session.create()
+        device_id = request.data.get("device_id")
+        params = {"device_id": device_id} if device_id else None
+        code, data = spotify_api_request(request.session.session_key, "PUT", "/me/player/pause", params=params)
+        return Response(data or {}, status=code or status.HTTP_401_UNAUTHORIZED)
+    
+class QueueLatestFiveSongs(APIView):
+    def post(self, request, format=None):
+        if not request.session.session_key:
+            request.session.create()
+        session_key = request.session.session_key
+
+        # Get the latest 5 songs you saved (by timestamp desc)
+        songs = list(Song.objects.order_by("-timestamp")[:5])  # title, artist, timestamp
+
+        if not songs:
+            return Response({"error": "No songs found to queue."}, status=404)
+
+        device_id = request.data.get("device_id")
+        results = []
+        for s in reversed(songs):  # keep original chronological order when queuing
+            uri = spotify_search_track_uri(session_key, s.title, s.artist)
+            if not uri:
+                results.append({"title": s.title, "artist": s.artist, "uri": None, "status": 404})
+                continue
+            code, data = spotify_add_to_queue(session_key, uri, device_id=device_id)
+            results.append({"title": s.title, "artist": s.artist, "uri": uri, "status": code})
+
+        ok = all(r["status"] == 204 for r in results if r["uri"])
+        return Response({"queued": results}, status=200 if ok else 207)
+
+
+class PlayPauseToggle(APIView):
+    def post(self, request, format=None):
+        if not request.session.session_key:
+            request.session.create()
+        session_key = request.session.session_key
+
+        code, data = spotify_api_request(session_key, "GET", "/me/player/currently-playing")
+        is_playing = isinstance(data, dict) and data.get("is_playing")
+
+        if is_playing:
+            code2, data2 = spotify_api_request(session_key, "PUT", "/me/player/pause")
+            new_state = False
+        else:
+            code2, data2 = spotify_api_request(session_key, "PUT", "/me/player/play")
+            new_state = True
+
+        return Response({"is_playing": new_state}, status=code2 or 200)

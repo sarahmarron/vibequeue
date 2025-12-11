@@ -1,18 +1,18 @@
 import React from "react";
 
-export default function PromptBox({ user, quote, onChange, onSubmit }) {
+export default function PromptBox({ title, artist, onChange, onSubmit }) {
   return (
     <form onSubmit={onSubmit}>
       <div className="input-group mb-3">
         <div className="input-group-prepend">
-        <span className="input-group-text">Song Title</span>
+          <span className="input-group-text">Song Title</span>
         </div>
         <input
           type="text"
           className="form-control"
           placeholder="Enter song title"
-          value={user}
-          name="user"
+          value={title}
+          name="title"
           onChange={onChange}
         />
       </div>
@@ -25,13 +25,15 @@ export default function PromptBox({ user, quote, onChange, onSubmit }) {
           type="text"
           className="form-control"
           placeholder="Enter artist name"
-          value={quote}
-          name="quote"
+          value={artist}
+          name="artist"
           onChange={onChange}
         />
       </div>
 
-      <button type="submit" className="btn btn-primary mb-5">Submit</button>
+      <button type="submit" className="btn btn-primary mb-5">
+        Add Song
+      </button>
     </form>
   );
 }

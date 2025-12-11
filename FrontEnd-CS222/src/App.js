@@ -5,6 +5,8 @@ import PromptBox from "./PromptBox";
 import QueueList from "./QueueList";
 import GPTRecs from "./GPTRecs";
 
+import GraphView from "./GraphView";
+import SpotifyPlayer from "./Components/SpotifyPlayer.js";
 
 const API_BASE = process.env.REACT_APP_API_BASE || "http://127.0.0.1:8000";
 
@@ -14,6 +16,7 @@ class App extends React.Component {
     gptRecs: [],
     title: "",
     artist: "",
+    recPrompt: "", // text for GPT song recommendations
     message: "",
     isAuthed: false,
     authError: "",
@@ -34,7 +37,7 @@ class App extends React.Component {
   componentDidMount() {
     // keep existing fetch
     axios
-      .get(`${API_BASE}/wel/`, { withCredentials: true })
+      .get(`${API_BASE}/songs/`, { withCredentials: true }) // now loads songs from backend
       .then((res) => this.setState({ details: res.data }))
       .catch(() => {});
 
@@ -99,45 +102,76 @@ class App extends React.Component {
   handleSubmit = (e) => {
     e.preventDefault();
 
-    const timestamp = new Date().toISOString();
-  
+    const { title, artist } = this.state;
+    if (!title || !artist) {
+      return; // don't submit empty songs
+    }
+
     axios
-      .post("http://127.0.0.1:8000/wel/", {
-        title: this.state.title,
-        artist: this.state.artist,
-        timestamp: timestamp,
-        name: this.state.user,
-        detail: this.state.quote,
+      .post(`${API_BASE}/songs/`, {
+        title,
+        artist,
       })
       .then((res) => {
         const songs = res.data;
         // append the created Song from backend
         this.setState((prev) => ({
           gptRecs: [ ...prev.gptRecs, { prompt: this.state.recPrompt, songs } ],
+        // append the created Song from backend
+        this.setState((prev) => ({
+          details: [...prev.details, res.data],
           title: "",
           artist: "",
         }));
       })
       .catch((err) => {
-        console.error(err);
-        // Optional: still show locally if backend isn't running
-        this.setState((prev) => ({
-          details: [...prev.details, { name: prev.user, detail: prev.quote }],
-          user: "",
-          quote: "",
-        }));
+        console.error("Failed to save song", err);
       });
+  };
+
+  queueLatest = async () => {
+    try {
+      await axios.post(`${API_BASE}/queue-latest/`, null, {
+        withCredentials: true,
+      });
+      // optional toast:
+      alert("Queued latest 5 recommendations in Spotify");
+    } catch (e) {
+      console.error("Failed to queue latest songs", e);
+    }
+  };
+
+  togglePlayPause = async () => {
+    try {
+      const res = await axios.post(`${API_BASE}/play-toggle/`, null, {
+        withCredentials: true,
+      });
+      // optional: use res.data.is_playing if you want to reflect UI state
+    } catch (e) {
+      console.error("Failed to toggle play/pause", e);
+    }
+  };
+
+  // call backend GPT endpoint to generate + save song recs
+  handleSongRecs = (e) => {
+    e.preventDefault();
+
+    const { recPrompt } = this.state;
+    if (!recPrompt) return;
+
     axios
-      .post(
-        `${API_BASE}/wel/`,
-        {
-          name: this.state.user,
-          detail: this.state.quote,
-        },
-        { withCredentials: true }
-      )
-      .then(() => this.setState({ user: "", quote: "" }))
-      .catch(() => {});
+      .post(`${API_BASE}/song-recs/`, { prompt: recPrompt })
+      .then((res) => {
+        // res.data is an array of Song objects created by backend
+        this.setState((prev) => ({
+          details: [...prev.details, ...res.data],
+          recPrompt: "",
+        }));
+        return this.queueLatest();
+      })
+      .catch((err) => {
+        console.error("Failed to get GPT song recs", err);
+      });
   };
 
   playSong = (uri) => {
@@ -170,8 +204,8 @@ class App extends React.Component {
       <div className="App container jumbotron">
         {/* Replace the entire form with PromptBox */}
         <PromptBox
-          user={this.state.user}
-          quote={this.state.quote}
+          title={this.state.title}
+          artist={this.state.artist}
           onChange={this.handleInput}
           onSubmit={this.handleSubmit}
         />
@@ -207,6 +241,17 @@ class App extends React.Component {
           <GPTRecs key={i} prompt={block.prompt} songs={block.songs} />
         ))}
 
+        {/* Play/Pause toggle (separate button) */}
+        {this.state.isAuthed && (
+          <div className="mb-4">
+            <button
+              className="btn btn-outline-dark"
+              onClick={this.togglePlayPause}
+            >
+              ⏯️ Play / Pause
+            </button>
+          </div>
+        )}
         {/* Spotify login card */}
         <div className="card shadow-lg mb-4">
           <div className="card-header">Spotify Login</div>
@@ -235,12 +280,12 @@ class App extends React.Component {
           </div>
         </div>
 
+        {/* Spotify playback section */}
+        {this.state.isAuthed && <SpotifyPlayer />}
+
         {/* Database button */}
         <div className="my-4">
-          <button
-            className="btn btn-success"
-            onClick={this.fetchMessage}
-          >
+          <button className="btn btn-success" onClick={this.fetchMessage}>
             Get Message
           </button>
           <p className="mt-2">
@@ -257,41 +302,18 @@ class App extends React.Component {
             borderColor: "#000000",
           }}
         />
-  
+
         {/* Replace the map section with QueueList */}
         <QueueList
           items={this.state.details}
           colorForIndex={(i) => this.renderSwitch(i % 6)}
         />
 
-        {this.state.details.map((detail, id) => (
-          <div key={id}>
-            <div className="card shadow-lg">
-              <div
-                className={"bg-" + this.renderSwitch(id % 6) + " card-header"}
-              >
-                Quote {id + 1}
-              </div>
-              <div className="card-body">
-                <blockquote
-                  className={
-                    "text-" + this.renderSwitch(id % 6) + " blockquote mb-0"
-                  }
-                >
-                  <h1> {detail.detail} </h1>
-                  <footer className="blockquote-footer">
-                    <cite title="Source Title">{detail.name}</cite>
-                  </footer>
-                </blockquote>
-              </div>
-            </div>
-            <span className="border border-primary "></span>
-          </div>
-        ))}
+        {/* Graphical View of User Inputs */}
+        <GraphView items={this.state.details} />
       </div>
     );
   }
-  
 }
 
 export default App;

@@ -15,19 +15,45 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path, include
-from core.views import *
-from core.views import AuthURL, spotify_callback, IsAuthenticated, get_message
-from core.views import AuthURL, spotify_callback, IsAuthenticated, Logout, SongView
+from django.urls import path
+
+from core.views import (
+    ReactView,
+    AuthURL,
+    spotify_callback,
+    IsAuthenticated,
+    Logout,
+    SongView,
+    GPTSongRecView,
+    get_message,
+    Devices,
+    SearchTracks,
+    Play,
+    Pause,
+    QueueLatestFiveSongs,
+    PlayPauseToggle,
+)
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('wel/', ReactView.as_view(), name="something"),
-    path('message/', get_message, name="get-message"),
-    path('get-auth-url', AuthURL.as_view()),
-    path('get-auth-url/', AuthURL.as_view()),
-    path('redirect', spotify_callback),
-    path('is-authenticated/', IsAuthenticated.as_view()),
-    path('logout/', Logout.as_view()),
-    path("songs/", SongView.as_view(), name="songs")
+    path("admin/", admin.site.urls),
+    path("wel/", ReactView.as_view(), name="something"),
+    path("message/", get_message, name="get-message"),
+    path("get-auth-url", AuthURL.as_view()),
+    path("get-auth-url/", AuthURL.as_view()),
+    path("redirect", spotify_callback),
+    path("is-authenticated/", IsAuthenticated.as_view()),
+    path("logout/", Logout.as_view()),
+
+    path("songs/", SongView.as_view(), name="songs"),
+    path("devices/", Devices.as_view()),
+    path("search/", SearchTracks.as_view()),
+
+    path("play/", Play.as_view()),
+    path("pause", Pause.as_view()),
+
+    # song recs w gpt
+    path("song-recs/", GPTSongRecView.as_view(), name="song-recs"),
+
+    path("queue-latest/", QueueLatestFiveSongs.as_view()),
+    path("play-toggle/", PlayPauseToggle.as_view()),
 ]
