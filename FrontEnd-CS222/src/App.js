@@ -3,6 +3,8 @@ import React from "react";
 import axios from "axios";
 import PromptBox from "./PromptBox";
 import QueueList from "./QueueList";
+import GPTRecs from "./GPTRecs";
+
 import GraphView from "./GraphView";
 import SpotifyPlayer from "./Components/SpotifyPlayer.js";
 
@@ -11,6 +13,7 @@ const API_BASE = process.env.REACT_APP_API_BASE || "http://127.0.0.1:8000";
 class App extends React.Component {
   state = {
     details: [],
+    gptRecs: [],
     title: "",
     artist: "",
     recPrompt: "", // text for GPT song recommendations
@@ -110,6 +113,10 @@ class App extends React.Component {
         artist,
       })
       .then((res) => {
+        const songs = res.data;
+        // append the created Song from backend
+        this.setState((prev) => ({
+          gptRecs: [ ...prev.gptRecs, { prompt: this.state.recPrompt, songs } ],
         // append the created Song from backend
         this.setState((prev) => ({
           details: [...prev.details, res.data],
@@ -167,6 +174,18 @@ class App extends React.Component {
       });
   };
 
+  playSong = (uri) => {
+    axios.put(`${API_BASE}/play/`, { uri })
+      .then(res => console.log("Playing", uri))
+      .catch(err => console.error("Play failed", err));
+  };
+  
+  pauseSong = () => {
+    axios.put(`${API_BASE}/pause/`)
+      .then(() => console.log("Paused"))
+      .catch(err => console.error("Pause failed", err));
+  };
+  
   logout = async () => {
     try {
       await axios.post(`${API_BASE}/logout/`, null, { withCredentials: true });
@@ -217,6 +236,11 @@ class App extends React.Component {
             </small>
           </div>
         </div>
+        
+        {this.state.gptRecs.map((block, i) => (
+          <GPTRecs key={i} prompt={block.prompt} songs={block.songs} />
+        ))}
+
         {/* Play/Pause toggle (separate button) */}
         {this.state.isAuthed && (
           <div className="mb-4">

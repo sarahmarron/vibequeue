@@ -1,17 +1,34 @@
 import React from "react";
 
-export default function QueueList({ items, colorForIndex }) {
+export default function QueueList({ items, colorForIndex, onPlay, onPause }) {
   return (
     <>
-      {items.map((song, idx) => (
-        <div key={song.id ?? idx}>
-          <div className="card shadow-lg mb-3">
-            <div className={`bg-${colorForIndex(idx)} card-header`}>
-              Song {idx + 1}
+      {items.map((song, id) => (
+        <div key={id}>
+          <div className="card shadow-lg mb-2">
+            <div className={`bg-${colorForIndex(id)} card-header`}>
+              {song.title || `Quote ${id + 1}`} - {song.artist || ""}
             </div>
-            <div className="card-body">
-              <h3 className="mb-1">{song.title}</h3>
-              <p className="text-muted mb-0">{song.artist}</p>
+            <div className="card-body d-flex justify-content-between align-items-center">
+              <span>{song.detail || ""}</span>
+              <div>
+                {song.uri && (
+                  <>
+                    <button
+                      className="btn btn-sm btn-success me-2"
+                      onClick={() => onPlay(song.uri)}
+                    >
+                      ▶ Play
+                    </button>
+                    <button
+                      className="btn btn-sm btn-warning"
+                      onClick={onPause}
+                    >
+                      ⏸ Pause
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>
