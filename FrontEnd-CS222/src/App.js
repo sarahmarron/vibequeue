@@ -21,6 +21,7 @@ class App extends React.Component {
     isAuthed: false,
     authError: "",
     loadingAuth: true,
+    activeView: "main",
   };
 
   fetchMessage = () => {
@@ -114,11 +115,9 @@ class App extends React.Component {
       })
       .then((res) => {
         const songs = res.data;
-        // append the created Song from backend
+
         this.setState((prev) => ({
           gptRecs: [ ...prev.gptRecs, { prompt: this.state.recPrompt, songs } ],
-        // append the created Song from backend
-        this.setState((prev) => ({
           details: [...prev.details, res.data],
           title: "",
           artist: "",
@@ -197,8 +196,173 @@ class App extends React.Component {
     }
   };
 
+  setView = (view) => {
+    this.setState({ activeView: view });
+  };
+
   render() {
     const { loadingAuth, isAuthed, authError } = this.state;
+
+    return (
+      <div className="App">
+        <header className="hero">
+          <h1 className="hero-title">Dare to Endeavor</h1>
+          <p className="hero-subtitle">Turn a vibe into a playlist</p>
+        </header>
+
+        <div className="tabs">
+          <button
+            className={
+              this.state.activeView === "main" ? "tab-button active" : "tab-button"
+            }
+            onClick={() => this.setView("main")}
+          >
+            Playlist
+          </button>
+          <button
+            className={
+              this.state.activeView === "journey" ? "tab-button active" : "tab-button"
+            }
+            onClick={() => this.setView("journey")}
+          >
+            Song Journey
+          </button>
+        </div>
+
+        <main className="layout">
+          {this.state.activeView === "main" && (
+            <>
+              `<section className="card card-promptBox">
+                {/* Replace the entire form with PromptBox */}
+                <PromptBox
+                  title={this.state.title}
+                  artist={this.state.artist}
+                  onChange={this.handleInput}
+                  onSubmit={this.handleSubmit}
+                />
+              </section>
+              <section className="card card-gptRecs">
+                {/* GPT Song Recommendations */}
+                <div className="card shadow-lg mb-4">
+                  <div className="card-header">GPT Song Recommendations</div>
+                  <div className="card-body">
+                    <div className="input-group mb-3">
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Describe the vibe (e.g. 'happy cheerful spring songs')"
+                        name="recPrompt"
+                        value={this.state.recPrompt}
+                        onChange={this.handleInput}
+                      />
+                      <button
+                        className="btn btn-primary"
+                        onClick={this.handleSongRecs}
+                        disabled={!this.state.recPrompt}
+                      >
+                        Get Recommendations
+                      </button>
+                    </div>
+                    <small className="text-muted">
+                      GPT songs are saved to the database and shown in the list below.
+                    </small>
+                  </div>
+                </div>
+                
+                {this.state.gptRecs.map((block, i) => (
+                  <GPTRecs key={i} prompt={block.prompt} songs={block.songs} />
+                ))}
+              </section>
+
+              <section className="card card-spotify">
+
+                {/* Play/Pause toggle (separate button) */}
+                {this.state.isAuthed && (
+                  <div className="mb-4">
+                    <button
+                      className="btn btn-outline-dark"
+                      onClick={this.togglePlayPause}
+                    >
+                      ⏯️ Play / Pause
+                    </button>
+                  </div>
+                )}
+                {/* Spotify login card */}
+                <div className="card shadow-lg mb-4">
+                  <div className="card-header">Spotify Login</div>
+                  <div className="card-body">
+                    {loadingAuth ? (
+                      <p>Checking login…</p>
+                    ) : isAuthed ? (
+                      <div>
+                        <p>✅ You’re logged in to Spotify.</p>
+                        <button
+                          className="btn btn-outline-danger"
+                          onClick={this.logout}
+                        >
+                          Log out
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <p>Not logged in.</p>
+                        <button className="btn btn-success" onClick={this.startLogin}>
+                          Log in with Spotify
+                        </button>
+                      </>
+                    )}
+                    {authError && <p className="text-danger mt-2">{authError}</p>}
+                  </div>
+                </div>
+
+                {/* Spotify playback section */}
+                {this.state.isAuthed && <SpotifyPlayer />}
+
+                {/* Database button */}
+                <div className="my-4">
+                  <button className="btn btn-success" onClick={this.fetchMessage}>
+                    Get Message
+                  </button>
+                  <p className="mt-2">
+                    {this.state.message && <strong>Message: </strong>}
+                    {this.state.message}
+                  </p>
+                </div>
+
+                  <hr
+                    style={{
+                      color: "#000000",
+                      backgroundColor: "#000000",
+                      height: 0.5,
+                      borderColor: "#000000",
+                    }}
+                  />
+              </section>
+
+              <section className="card card-queueList">
+
+                {/* Replace the map section with QueueList */}
+                <QueueList
+                  items={this.state.details}
+                  colorForIndex={(i) => this.renderSwitch(i % 6)}
+                />
+              </section>
+            </>
+          )}
+
+          {this.state.activeView === "journey" && (
+            <>
+              <section className="card card-graphView">
+                {/* Graphical View of User Inputs */}
+                <GraphView items={this.state.details} />
+              </section>
+            </>
+          )}
+        </main>
+  
+        <footer className="footer">CS 222 • Team 99</footer>
+      </div>
+    );
 
     return (
       <div className="App container jumbotron">

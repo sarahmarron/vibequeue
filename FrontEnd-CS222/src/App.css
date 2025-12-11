@@ -1,77 +1,227 @@
-/* Center everything and give breathing room */
+/* ---------- GLOBAL PAGE STYLING ---------- */
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+  background: radial-gradient(circle at top, #eef2ff 0, #f9fafb 40%, #f1f5f9 100%);
+}
+
+/* Outer "card" that holds the entire app */
 .App {
-  max-width: 750px;
+  max-width: 900px;
   margin: 40px auto;
-  padding: 24px;
-  font-family: "Inter", sans-serif;
+  padding: 28px 32px 36px;
+  background: #ffffff;
+  border-radius: 24px;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.12);
 }
 
-/* Headings */
-h1, h2 {
+/* Hero header at top */
+.hero {
   text-align: center;
-  color: #222;
+  margin-bottom: 28px;
 }
 
-/* Prompt form */
-form {
+.hero-title {
+  font-size: 2.3rem;
+  letter-spacing: -0.03em;
+  margin: 0 0 8px;
+  color: #111827;
+}
+
+.hero-subtitle {
+  margin: 0;
+  color: #6b7280;
+}
+
+/* Stack the main sections with spacing */
+.layout {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-bottom: 24px;
+  gap: 18px;
 }
 
-/* Inputs */
-input[type="text"], textarea {
-  padding: 10px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  font-size: 16px;
-  resize: none;
+.tabs {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 18px;
 }
 
-/* Submit button */
-button {
-  background-color: #007bff;
-  color: white;
-  font-weight: 600;
-  border: none;
-  border-radius: 6px;
-  padding: 10px 20px;
-  align-self: flex-start;
-  cursor: pointer;
-  transition: 0.2s ease-in-out;
-}
-button:hover {
-  background-color: #0056b3;
-}
-
-/* Quote cards */
-.card {
-  border-radius: 8px;
-  margin: 16px 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-.card-header {
-  font-weight: 600;
-}
-blockquote {
+/* Base tab button overrides the generic button style */
+.tab-button {
   margin: 0;
+  padding: 6px 16px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  color: #6b7280;
+  font-size: 0.9rem;
+  font-weight: 500;
+  box-shadow: none;
+}
+
+/* Remove global gradient/shadow for these specifically */
+.tabs .tab-button {
+  background: #f9fafb;
+  box-shadow: none;
+}
+
+/* Active tab */
+.tab-button.active {
+  background: #111827;
+  color: #ffffff;
+  border-color: #111827;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.22);
+}
+
+
+/* ---------- GENERAL CARD STYLE ---------- */
+
+.card {
+  background: #f9fafb;
+  border-radius: 18px;
+  padding: 18px 20px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+}
+
+.card h2 {
+  margin-top: 0;
+  margin-bottom: 8px;
+  font-size: 1.05rem;
+  color: #111827;
+}
+
+.card p {
+  margin-top: 4px;
+  margin-bottom: 0;
+  color: #6b7280;
+}
+
+/* ---------- SECTION-SPECIFIC TWEAKS ---------- */
+
+.card-promptBox {
+  background: #ffffff;
+}
+
+.card-gptRecs {
+  background: #f5f3ff;
+}
+
+.card-spotify {
+  background: #ecfeff;
+}
+
+.card-queueList {
+  background: #f9fafb;
+}
+
+.card-graphView {
+  background: #f3f4ff;
+}
+
+/* ---------- INPUTS & BUTTONS ---------- */
+
+input[type="text"],
+textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  font-size: 0.95rem;
+  outline: none;
+  resize: none;
+  background: #ffffff;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+input:focus,
+textarea:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+}
+
+/* Base button style (still works with className overrides) */
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 9px 18px;
+  border-radius: 999px;
+  border: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  color: #ffffff;
+  box-shadow: 0 10px 25px rgba(79, 70, 229, 0.35);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 30px rgba(79, 70, 229, 0.4);
+  filter: brightness(1.03);
+}
+
+button:active {
+  transform: translateY(0);
+  box-shadow: 0 8px 18px rgba(79, 70, 229, 0.32);
+}
+
+/* Let Bootstrap-ish .btn classes keep their own colors, but get rounded shape */
+.btn {
+  border-radius: 999px !important;
+}
+
+/* Give buttons breathing room */
+button {
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+.card button {
+  margin-top: 12px;
+}
+
+/* Horizontal spacing for side-by-side buttons */
+button + button {
+  margin-left: 10px;
+}
+
+/* ---------- QUEUE LIST ---------- */
+
+.card-queueList ul {
+  list-style: none;
+  margin: 10px 0 0;
   padding: 0;
 }
 
-/* Graphical Representation */
+.card-queueList li {
+  background: #ffffff;
+  border-radius: 999px;
+  padding: 8px 14px;
+  margin-bottom: 6px;
+  border: 1px solid #e5e7eb;
+  font-size: 0.95rem;
+}
+
+/* ---------- GRAPH VIEW (your existing styles, slightly polished) ---------- */
 
 .graph-view {
-  margin-top: 40px;
+  margin-top: 4px;
   padding: 16px;
-  border-radius: 12px;
+  border-radius: 16px;
   background: #f9fafb;
 }
 
 .graph-title {
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   font-weight: 600;
   margin-bottom: 16px;
+  text-align: center;
 }
 
 .graph-flow {
@@ -83,9 +233,9 @@ blockquote {
 .graph-node {
   min-width: 260px;
   padding: 12px 16px;
-  border-radius: 10px;
-  background: white;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
   text-align: center;
 }
 
@@ -95,56 +245,32 @@ blockquote {
 
 .graph-node-subtitle {
   font-size: 0.9rem;
-  color: #555;
+  color: #6b7280;
   margin-top: 4px;
 }
 
 .graph-arrow {
-  margin: 8px 0 12px;
-  font-size: 1.2rem;
-  color: #999;
+  margin: 10px 0 12px;
+  font-size: 1.3rem;
+  color: #9ca3af;
 }
 
+/* ---------- FOOTER ---------- */
 
-
-
-/*
-.App {
+.footer {
+  margin-top: 28px;
+  padding-top: 14px;
+  border-top: 1px solid #e5e7eb;
   text-align: center;
+  color: #9ca3af;
+  font-size: 0.8rem;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
+/* ---------- RESPONSIVE ---------- */
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
+@media (max-width: 640px) {
+  .App {
+    margin: 20px 12px 28px;
+    padding: 20px 18px 26px;
   }
 }
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
-}
-
-.App-link {
-  color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-  */
