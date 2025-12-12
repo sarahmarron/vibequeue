@@ -68,3 +68,20 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/d
 ### `npm run build` fails to minify
 
 This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+
+## Team Contributions
+
+### Justin
+
+### Radhe
+
+### Ethan
+
+### Sarah
+- Contributed to frontend structure and UI organization.
+- Set up database migrations
+- Helped establish backend–frontend data flow and tested endpoints.
+- Worked on frontend formatting with PromptBox components
+- Enabled the database to accept songs with timestamp, title, and artist
+- Implemented frontend display for GPT prompts and recommended songs.
+- Integrated Play and Pause functionality from the backend into the frontend UI.
