@@ -1,10 +1,8 @@
 import "./App.css";
 import React from "react";
 import axios from "axios";
-import PromptBox from "./PromptBox";
 import QueueList from "./QueueList";
 import GPTRecs from "./GPTRecs";
-
 import GraphView from "./GraphView";
 import SpotifyPlayer from "./Components/SpotifyPlayer.js";
 
@@ -12,11 +10,9 @@ const API_BASE = process.env.REACT_APP_API_BASE || "http://127.0.0.1:8000";
 
 class App extends React.Component {
   state = {
-    details: [],
-    gptRecs: [],
-    title: "",
-    artist: "",
-    recPrompt: "", // text for GPT song recommendations
+    details: [],      // songs from backend DB
+    gptRecs: [],      // optional grouping if you want it later
+    recPrompt: "",    // GPT prompt input
     message: "",
     isAuthed: false,
     authError: "",
@@ -24,27 +20,23 @@ class App extends React.Component {
     activeView: "main",
   };
 
-  fetchMessage = () => {
-    axios
-      .get("http://127.0.0.1:8000/message/")
-      .then((res) => {
-        this.setState({ message: res.data.text });
-      })
-      .catch((err) => {
-        console.error(err);
-      });
-  };
-
   componentDidMount() {
-    // keep existing fetch
+    // Load existing songs from backend
     axios
-      .get(`${API_BASE}/songs/`, { withCredentials: true }) // now loads songs from backend
+      .get(`${API_BASE}/songs/`, { withCredentials: true })
       .then((res) => this.setState({ details: res.data }))
       .catch(() => {});
 
-    // check Spotify auth status
+    // Check Spotify auth status
     this.checkAuth();
   }
+
+  fetchMessage = () => {
+    axios
+      .get(`${API_BASE}/message/`)
+      .then((res) => this.setState({ message: res.data.text }))
+      .catch((err) => console.error(err));
+  };
 
   checkAuth = async () => {
     try {
@@ -66,66 +58,42 @@ class App extends React.Component {
         withCredentials: true,
       });
       const { url } = res.data;
-      // Always open Spotify auth page, even if already logged in
-      // window.location.href = url; // opens in same tab
+
+      // Open Spotify auth page
       window.open(url, "_blank");
-      // or use window.open(url, "_blank"); to open in new tab
     } catch (e) {
       console.error("Failed to start login", e);
     }
   };
 
-  renderSwitch = (param) => {
-    switch (param + 1) {
-      case 1:
-        return "primary ";
-      case 2:
-        return "secondary";
-      case 3:
-        return "success";
-      case 4:
-        return "danger";
-      case 5:
-        return "warning";
-      case 6:
-        return "info";
-      default:
-        return "yellow";
+  logout = async () => {
+    try {
+      await axios.post(`${API_BASE}/logout/`, null, { withCredentials: true });
+    } catch (e) {
+      // ignore
+    } finally {
+      this.checkAuth();
     }
+  };
+
+  setView = (view) => {
+    this.setState({ activeView: view });
   };
 
   handleInput = (e) => {
-    this.setState({
-      [e.target.name]: e.target.value,
-    });
+    this.setState({ [e.target.name]: e.target.value });
   };
 
-  handleSubmit = (e) => {
-    e.preventDefault();
-
-    const { title, artist } = this.state;
-    if (!title || !artist) {
-      return; // don't submit empty songs
+  renderSwitch = (param) => {
+    switch (param + 1) {
+      case 1: return "primary ";
+      case 2: return "secondary";
+      case 3: return "success";
+      case 4: return "danger";
+      case 5: return "warning";
+      case 6: return "info";
+      default: return "yellow";
     }
-
-    axios
-      .post(`${API_BASE}/songs/`, {
-        title,
-        artist,
-      })
-      .then((res) => {
-        const songs = res.data;
-
-        this.setState((prev) => ({
-          gptRecs: [ ...prev.gptRecs, { prompt: this.state.recPrompt, songs } ],
-          details: [...prev.details, res.data],
-          title: "",
-          artist: "",
-        }));
-      })
-      .catch((err) => {
-        console.error("Failed to save song", err);
-      });
   };
 
   queueLatest = async () => {
@@ -133,7 +101,6 @@ class App extends React.Component {
       await axios.post(`${API_BASE}/queue-latest/`, null, {
         withCredentials: true,
       });
-      // optional toast:
       alert("Queued latest 5 recommendations in Spotify");
     } catch (e) {
       console.error("Failed to queue latest songs", e);
@@ -142,16 +109,15 @@ class App extends React.Component {
 
   togglePlayPause = async () => {
     try {
-      const res = await axios.post(`${API_BASE}/play-toggle/`, null, {
+      await axios.post(`${API_BASE}/play-toggle/`, null, {
         withCredentials: true,
       });
-      // optional: use res.data.is_playing if you want to reflect UI state
     } catch (e) {
       console.error("Failed to toggle play/pause", e);
     }
   };
 
-  // call backend GPT endpoint to generate + save song recs
+  // GPT: generate recs -> backend saves them -> then we refresh state + queue
   handleSongRecs = (e) => {
     e.preventDefault();
 
@@ -161,9 +127,11 @@ class App extends React.Component {
     axios
       .post(`${API_BASE}/song-recs/`, { prompt: recPrompt })
       .then((res) => {
-        // res.data is an array of Song objects created by backend
+        // res.data is array of created Song rows
         this.setState((prev) => ({
           details: [...prev.details, ...res.data],
+          // optional grouping (currently not used since GPTRecs wants prompt+songs)
+          gptRecs: [...prev.gptRecs, { prompt: recPrompt, songs: res.data }],
           recPrompt: "",
         }));
         return this.queueLatest();
@@ -171,33 +139,6 @@ class App extends React.Component {
       .catch((err) => {
         console.error("Failed to get GPT song recs", err);
       });
-  };
-
-  playSong = (uri) => {
-    axios.put(`${API_BASE}/play/`, { uri })
-      .then(res => console.log("Playing", uri))
-      .catch(err => console.error("Play failed", err));
-  };
-  
-  pauseSong = () => {
-    axios.put(`${API_BASE}/pause/`)
-      .then(() => console.log("Paused"))
-      .catch(err => console.error("Pause failed", err));
-  };
-  
-  logout = async () => {
-    try {
-      await axios.post(`${API_BASE}/logout/`, null, { withCredentials: true });
-    } catch (e) {
-      // optional: console.error(e);
-    } finally {
-      // Refresh state to reflect logged-out UI
-      this.checkAuth();
-    }
-  };
-
-  setView = (view) => {
-    this.setState({ activeView: view });
   };
 
   render() {
@@ -212,17 +153,13 @@ class App extends React.Component {
 
         <div className="tabs">
           <button
-            className={
-              this.state.activeView === "main" ? "tab-button active" : "tab-button"
-            }
+            className={this.state.activeView === "main" ? "tab-button active" : "tab-button"}
             onClick={() => this.setView("main")}
           >
             Playlist
           </button>
           <button
-            className={
-              this.state.activeView === "journey" ? "tab-button active" : "tab-button"
-            }
+            className={this.state.activeView === "journey" ? "tab-button active" : "tab-button"}
             onClick={() => this.setView("journey")}
           >
             Song Journey
@@ -232,17 +169,7 @@ class App extends React.Component {
         <main className="layout">
           {this.state.activeView === "main" && (
             <>
-              `<section className="card card-promptBox">
-                {/* Replace the entire form with PromptBox */}
-                <PromptBox
-                  title={this.state.title}
-                  artist={this.state.artist}
-                  onChange={this.handleInput}
-                  onSubmit={this.handleSubmit}
-                />
-              </section>
               <section className="card card-gptRecs">
-                {/* GPT Song Recommendations */}
                 <div className="card shadow-lg mb-4">
                   <div className="card-header">GPT Song Recommendations</div>
                   <div className="card-body">
@@ -268,26 +195,21 @@ class App extends React.Component {
                     </small>
                   </div>
                 </div>
-                
+
                 {this.state.gptRecs.map((block, i) => (
                   <GPTRecs key={i} prompt={block.prompt} songs={block.songs} />
                 ))}
               </section>
 
               <section className="card card-spotify">
-
-                {/* Play/Pause toggle (separate button) */}
-                {this.state.isAuthed && (
+                {isAuthed && (
                   <div className="mb-4">
-                    <button
-                      className="btn btn-outline-dark"
-                      onClick={this.togglePlayPause}
-                    >
+                    <button className="btn btn-outline-dark" onClick={this.togglePlayPause}>
                       ⏯️ Play / Pause
                     </button>
                   </div>
                 )}
-                {/* Spotify login card */}
+
                 <div className="card shadow-lg mb-4">
                   <div className="card-header">Spotify Login</div>
                   <div className="card-body">
@@ -296,10 +218,7 @@ class App extends React.Component {
                     ) : isAuthed ? (
                       <div>
                         <p>✅ You’re logged in to Spotify.</p>
-                        <button
-                          className="btn btn-outline-danger"
-                          onClick={this.logout}
-                        >
+                        <button className="btn btn-outline-danger" onClick={this.logout}>
                           Log out
                         </button>
                       </div>
@@ -315,10 +234,8 @@ class App extends React.Component {
                   </div>
                 </div>
 
-                {/* Spotify playback section */}
-                {this.state.isAuthed && <SpotifyPlayer />}
+                {isAuthed && <SpotifyPlayer />}
 
-                {/* Database button */}
                 <div className="my-4">
                   <button className="btn btn-success" onClick={this.fetchMessage}>
                     Get Message
@@ -329,19 +246,17 @@ class App extends React.Component {
                   </p>
                 </div>
 
-                  <hr
-                    style={{
-                      color: "#000000",
-                      backgroundColor: "#000000",
-                      height: 0.5,
-                      borderColor: "#000000",
-                    }}
-                  />
+                <hr
+                  style={{
+                    color: "#000000",
+                    backgroundColor: "#000000",
+                    height: 0.5,
+                    borderColor: "#000000",
+                  }}
+                />
               </section>
 
               <section className="card card-queueList">
-
-                {/* Replace the map section with QueueList */}
                 <QueueList
                   items={this.state.details}
                   colorForIndex={(i) => this.renderSwitch(i % 6)}
@@ -351,130 +266,13 @@ class App extends React.Component {
           )}
 
           {this.state.activeView === "journey" && (
-            <>
-              <section className="card card-graphView">
-                {/* Graphical View of User Inputs */}
-                <GraphView items={this.state.details} />
-              </section>
-            </>
+            <section className="card card-graphView">
+              <GraphView items={this.state.details} />
+            </section>
           )}
         </main>
-  
+
         <footer className="footer">CS 222 • Team 99</footer>
-      </div>
-    );
-
-    return (
-      <div className="App container jumbotron">
-        {/* Replace the entire form with PromptBox */}
-        <PromptBox
-          title={this.state.title}
-          artist={this.state.artist}
-          onChange={this.handleInput}
-          onSubmit={this.handleSubmit}
-        />
-
-        {/* GPT Song Recommendations */}
-        <div className="card shadow-lg mb-4">
-          <div className="card-header">GPT Song Recommendations</div>
-          <div className="card-body">
-            <div className="input-group mb-3">
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Describe the vibe (e.g. 'happy cheerful spring songs')"
-                name="recPrompt"
-                value={this.state.recPrompt}
-                onChange={this.handleInput}
-              />
-              <button
-                className="btn btn-primary"
-                onClick={this.handleSongRecs}
-                disabled={!this.state.recPrompt}
-              >
-                Get Recommendations
-              </button>
-            </div>
-            <small className="text-muted">
-              GPT songs are saved to the database and shown in the list below.
-            </small>
-          </div>
-        </div>
-        
-        {this.state.gptRecs.map((block, i) => (
-          <GPTRecs key={i} prompt={block.prompt} songs={block.songs} />
-        ))}
-
-        {/* Play/Pause toggle (separate button) */}
-        {this.state.isAuthed && (
-          <div className="mb-4">
-            <button
-              className="btn btn-outline-dark"
-              onClick={this.togglePlayPause}
-            >
-              ⏯️ Play / Pause
-            </button>
-          </div>
-        )}
-        {/* Spotify login card */}
-        <div className="card shadow-lg mb-4">
-          <div className="card-header">Spotify Login</div>
-          <div className="card-body">
-            {loadingAuth ? (
-              <p>Checking login…</p>
-            ) : isAuthed ? (
-              <div>
-                <p>✅ You’re logged in to Spotify.</p>
-                <button
-                  className="btn btn-outline-danger"
-                  onClick={this.logout}
-                >
-                  Log out
-                </button>
-              </div>
-            ) : (
-              <>
-                <p>Not logged in.</p>
-                <button className="btn btn-success" onClick={this.startLogin}>
-                  Log in with Spotify
-                </button>
-              </>
-            )}
-            {authError && <p className="text-danger mt-2">{authError}</p>}
-          </div>
-        </div>
-
-        {/* Spotify playback section */}
-        {this.state.isAuthed && <SpotifyPlayer />}
-
-        {/* Database button */}
-        <div className="my-4">
-          <button className="btn btn-success" onClick={this.fetchMessage}>
-            Get Message
-          </button>
-          <p className="mt-2">
-            {this.state.message && <strong>Message: </strong>}
-            {this.state.message}
-          </p>
-        </div>
-
-        <hr
-          style={{
-            color: "#000000",
-            backgroundColor: "#000000",
-            height: 0.5,
-            borderColor: "#000000",
-          }}
-        />
-
-        {/* Replace the map section with QueueList */}
-        <QueueList
-          items={this.state.details}
-          colorForIndex={(i) => this.renderSwitch(i % 6)}
-        />
-
-        {/* Graphical View of User Inputs */}
-        <GraphView items={this.state.details} />
       </div>
     );
   }

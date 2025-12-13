@@ -101,10 +101,6 @@ body {
 
 /* ---------- SECTION-SPECIFIC TWEAKS ---------- */
 
-.card-promptBox {
-  background: #ffffff;
-}
-
 .card-gptRecs {
   background: #f5f3ff;
 }
