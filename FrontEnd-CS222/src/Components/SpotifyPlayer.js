@@ -8,7 +8,6 @@ class SpotifyPlayer extends React.Component {
     query: "",
     searchResults: [],
     devices: [],
-    selectedDevice: "",
     error: "",
     loading: false,
   };
@@ -21,9 +20,22 @@ class SpotifyPlayer extends React.Component {
     this.setState({ [e.target.name]: e.target.value });
   };
 
+  listDevices = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/devices/`, {
+        withCredentials: true,
+      });
+      this.setState({ devices: res.data.devices || [] });
+    } catch (e) {
+      console.error(e);
+      this.setState({ devices: [] });
+    }
+  };
+
   searchTracks = async () => {
     const { query } = this.state;
     if (!query.trim()) return;
+
     this.setState({ loading: true, error: "" });
 
     try {
@@ -40,38 +52,58 @@ class SpotifyPlayer extends React.Component {
     }
   };
 
-  listDevices = async () => {
+  saveManualToDb = async (track) => {
     try {
-      const res = await axios.get(`${API_BASE}/devices/`, {
-        withCredentials: true,
-      });
-      this.setState({ devices: res.data.devices || [] });
+      await axios.post(
+        `${API_BASE}/songs/save-manual/`,
+        { title: track.name, artist: track.artist, uri: track.uri },
+        { withCredentials: true }
+      );
+      if (this.props.onSongSaved) this.props.onSongSaved();
     } catch (e) {
-      console.error(e);
-      this.setState({ devices: [] });
+      console.error("Failed to save manual song to DB", e);
     }
   };
 
-  playTrack = async (uri) => {
-    const { selectedDevice } = this.state;
+  playTrack = async (track) => {
+    const device_id = this.props.selectedDevice || undefined;
+
     try {
       await axios.put(
         `${API_BASE}/play/`,
-        { uri, device_id: selectedDevice || undefined },
+        { uri: track.uri, device_id },
         { withCredentials: true }
       );
+      await this.saveManualToDb(track);
     } catch (e) {
       console.error(e);
       this.setState({ error: "Could not start playback. Is Spotify open?" });
     }
   };
 
+  queueTrack = async (track) => {
+    const device_id = this.props.selectedDevice || undefined;
+
+    try {
+      await axios.post(
+        `${API_BASE}/queue-uri/`,
+        { uri: track.uri, device_id },
+        { withCredentials: true }
+      );
+      await this.saveManualToDb(track);
+    } catch (e) {
+      console.error(e);
+      this.setState({ error: "Could not add to queue. Is Spotify open/active device?" });
+    }
+  };
+
   pauseTrack = async () => {
-    const { selectedDevice } = this.state;
+    const device_id = this.props.selectedDevice || undefined;
+
     try {
       await axios.put(
         `${API_BASE}/pause/`,
-        { device_id: selectedDevice || undefined },
+        { device_id },
         { withCredentials: true }
       );
     } catch (e) {
@@ -81,8 +113,8 @@ class SpotifyPlayer extends React.Component {
   };
 
   render() {
-    const { query, searchResults, devices, selectedDevice, loading, error } =
-      this.state;
+    const { query, searchResults, devices, loading, error } = this.state;
+    const selectedDevice = this.props.selectedDevice || "";
 
     return (
       <div className="card shadow-lg mb-4">
@@ -95,9 +127,7 @@ class SpotifyPlayer extends React.Component {
               <select
                 className="form-select"
                 value={selectedDevice}
-                onChange={(e) =>
-                  this.setState({ selectedDevice: e.target.value })
-                }
+                onChange={(e) => this.props.onDeviceChange?.(e.target.value)}
               >
                 <option value="">Auto (active device)</option>
                 {devices.map((d) => (
@@ -106,10 +136,7 @@ class SpotifyPlayer extends React.Component {
                   </option>
                 ))}
               </select>
-              <button
-                className="btn btn-outline-secondary"
-                onClick={this.listDevices}
-              >
+              <button className="btn btn-outline-secondary" onClick={this.listDevices}>
                 Refresh
               </button>
             </div>
@@ -120,7 +147,7 @@ class SpotifyPlayer extends React.Component {
             <input
               type="text"
               className="form-control"
-              placeholder="Search for a song (e.g., Shape of You)"
+              placeholder="Search for a song (e.g., warm nights)"
               name="query"
               value={query}
               onChange={this.handleChange}
@@ -151,12 +178,7 @@ class SpotifyPlayer extends React.Component {
                       <img
                         src={t.image}
                         alt=""
-                        style={{
-                          width: 50,
-                          height: 50,
-                          objectFit: "cover",
-                          borderRadius: 6,
-                        }}
+                        style={{ width: 50, height: 50, objectFit: "cover", borderRadius: 6 }}
                       />
                     )}
                     <div>
@@ -166,12 +188,15 @@ class SpotifyPlayer extends React.Component {
                       </div>
                     </div>
                   </div>
-                  <button
-                    className="btn btn-success btn-sm"
-                    onClick={() => this.playTrack(t.uri)}
-                  >
-                    ▶️ Play
-                  </button>
+
+                  <div className="d-flex gap-2">
+                    <button className="btn btn-success btn-sm" onClick={() => this.playTrack(t)}>
+                      ▶️ Play
+                    </button>
+                    <button className="btn btn-outline-primary btn-sm" onClick={() => this.queueTrack(t)}>
+                      ➕ Queue
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>

@@ -19,6 +19,9 @@ class Song(models.Model):
     artist = models.CharField(max_length=200)
     timestamp = models.DateTimeField(auto_now_add=True)
 
+    # new
+    source = models.CharField(max_length=50, default="unknown")  # "gpt" or "manual"
+    prompt = models.CharField(max_length=500, blank=True, default="")
 class Message(models.Model):
     text = models.CharField(max_length=200)
 
