@@ -72,3 +72,12 @@ OPENAI_API_KEY=""
 
 # Radhe's Work/Roles
 - I figured out how to implement the Spotify API through research on different websites and through YouTube videos. With the Spotify API, I was successfully able to allow the user to log into their Spotify account. I also implemented adding songs to the queue and playing and pausing music directly through the web app to the device. I also made it so you can search songs by name which gives the user a list similar to the spotify search and allows the user to play the song by pressing play on it through our web app. Most of this was backend work. I added some things to the frontend like the views for the search as well as a few buttons that allowed the play/pause to work.
+
+# Sarah's Work/Roles
+- Contributed to frontend structure and UI organization.
+- Set up database migrations
+- Helped establish backend–frontend data flow and tested endpoints.
+- Worked on frontend formatting with PromptBox components
+- Enabled the database to accept songs with timestamp, title, and artist
+- Implemented frontend display for GPT prompts and recommended songs.
+- Integrated Play and Pause functionality from the backend into the frontend UI.
