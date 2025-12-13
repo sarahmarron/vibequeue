@@ -69,3 +69,6 @@ BackEnd-CS222/spotifyapp/
 ```bash
 OPENAI_API_KEY=""
 ```
+
+# Radhe's Work/Roles
+- I figured out how to implement the Spotify API through research on different websites and through YouTube videos. With the Spotify API, I was successfully able to allow the user to log into their Spotify account. I also implemented adding songs to the queue and playing and pausing music directly through the web app to the device. I also made it so you can search songs by name which gives the user a list similar to the spotify search and allows the user to play the song by pressing play on it through our web app. Most of this was backend work. I added some things to the frontend like the views for the search as well as a few buttons that allowed the play/pause to work.
