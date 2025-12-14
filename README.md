@@ -40,8 +40,13 @@ Our app is a full-stack web application that integrates a React frontend with a 
 - Integrated Play and Pause functionality from the backend into the frontend UI.
 
 ### Ethan
--
-
+ - Improved website visual design and overall user experience
+ - Created an interactive song graph to visualize user listening journeys
+ - Modularized frontend code to improve structure and maintainability
+ - Connected frontend components to backend data and logic
+ - Simplified layouts and styling to enhance usability
+ - Ensured responsive design across devices
+ 
 # Setup Guide 
 
 Local setup guide to run the React frontend and Django backend (Requires OpenAI API key, Spotify Developer App permissions/setup, and Spotify premium)
