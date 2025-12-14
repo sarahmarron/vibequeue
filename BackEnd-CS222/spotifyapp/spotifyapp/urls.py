@@ -32,6 +32,11 @@ from core.views import (
     Pause,
     QueueLatestFiveSongs,
     PlayPauseToggle,
+    ClearSongs,
+    QueueURI,
+    SaveManualSong,
+    PlaySongFromHistory,
+    QueueSongFromHistory,
 )
 
 urlpatterns = [
@@ -56,4 +61,11 @@ urlpatterns = [
 
     path("queue-latest/", QueueLatestFiveSongs.as_view()),
     path("play-toggle/", PlayPauseToggle.as_view()),
+    
+    #new
+    path("songs/clear/", ClearSongs.as_view()),
+    path("queue-uri/", QueueURI.as_view()),
+    path("songs/save-manual/", SaveManualSong.as_view()),
+    path("songs/<int:song_id>/play/", PlaySongFromHistory.as_view()),
+    path("songs/<int:song_id>/queue/", QueueSongFromHistory.as_view()),
 ]

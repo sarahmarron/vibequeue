@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from . models import *
+from .models import *
 
 class ReactSerializer(serializers.ModelSerializer):
     class Meta:
@@ -9,4 +9,4 @@ class ReactSerializer(serializers.ModelSerializer):
 class SongSerializer(serializers.ModelSerializer):
     class Meta:
         model = Song
-        fields = ['id', 'title', 'artist', 'timestamp']
+        fields = ['id', 'title', 'artist', 'timestamp', 'source', 'prompt']

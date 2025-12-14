@@ -11,32 +11,35 @@ const API_BASE = process.env.REACT_APP_API_BASE || "http://127.0.0.1:8000";
 class App extends React.Component {
   state = {
     details: [],      // songs from backend DB
-    gptRecs: [],      // optional grouping if you want it later
-    recPrompt: "",    // GPT prompt input
+    gptRecs: [],      // [{ prompt, songs }]
+    recPrompt: "",
     message: "",
     isAuthed: false,
     authError: "",
     loadingAuth: true,
     activeView: "main",
+
+    // NEW: share selected device across SpotifyPlayer + history actions
+    selectedDevice: "",
   };
 
   componentDidMount() {
-    // Load existing songs from backend
-    axios
-      .get(`${API_BASE}/songs/`, { withCredentials: true })
-      .then((res) => this.setState({ details: res.data }))
-      .catch(() => {});
-
-    // Check Spotify auth status
+    this.refreshSongs();
     this.checkAuth();
   }
 
-  fetchMessage = () => {
-    axios
-      .get(`${API_BASE}/message/`)
-      .then((res) => this.setState({ message: res.data.text }))
-      .catch((err) => console.error(err));
+  // ----------- DATA LOADING -----------
+
+  refreshSongs = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/songs/`, { withCredentials: true });
+      this.setState({ details: res.data || [] });
+    } catch (e) {
+      // ignore
+    }
   };
+
+  // ----------- SPOTIFY AUTH -----------
 
   checkAuth = async () => {
     try {
@@ -44,7 +47,8 @@ class App extends React.Component {
       const res = await axios.get(`${API_BASE}/is-authenticated/`, {
         withCredentials: true,
       });
-      this.setState({ isAuthed: Boolean(res.data?.status) });
+      const authed = Boolean(res.data?.status);
+      this.setState({ isAuthed: authed });
     } catch (e) {
       this.setState({ isAuthed: false, authError: "Auth check failed" });
     } finally {
@@ -57,10 +61,7 @@ class App extends React.Component {
       const res = await axios.get(`${API_BASE}/get-auth-url/`, {
         withCredentials: true,
       });
-      const { url } = res.data;
-
-      // Open Spotify auth page
-      window.open(url, "_blank");
+      window.open(res.data.url, "_blank");
     } catch (e) {
       console.error("Failed to start login", e);
     }
@@ -73,39 +74,17 @@ class App extends React.Component {
       // ignore
     } finally {
       this.checkAuth();
+      this.refreshSongs();
     }
   };
 
-  setView = (view) => {
-    this.setState({ activeView: view });
-  };
+  // ----------- UI HELPERS -----------
 
-  handleInput = (e) => {
-    this.setState({ [e.target.name]: e.target.value });
-  };
+  setView = (view) => this.setState({ activeView: view });
 
-  renderSwitch = (param) => {
-    switch (param + 1) {
-      case 1: return "primary ";
-      case 2: return "secondary";
-      case 3: return "success";
-      case 4: return "danger";
-      case 5: return "warning";
-      case 6: return "info";
-      default: return "yellow";
-    }
-  };
+  handleInput = (e) => this.setState({ [e.target.name]: e.target.value });
 
-  queueLatest = async () => {
-    try {
-      await axios.post(`${API_BASE}/queue-latest/`, null, {
-        withCredentials: true,
-      });
-      alert("Queued latest 5 recommendations in Spotify");
-    } catch (e) {
-      console.error("Failed to queue latest songs", e);
-    }
-  };
+  // ----------- PLAYBACK CONTROLS -----------
 
   togglePlayPause = async () => {
     try {
@@ -117,32 +96,50 @@ class App extends React.Component {
     }
   };
 
-  // GPT: generate recs -> backend saves them -> then we refresh state + queue
+  queueLatest = async () => {
+    try {
+      await axios.post(`${API_BASE}/queue-latest/`, null, {
+        withCredentials: true,
+      });
+      //alert("Queued latest 5 recommendations in Spotify");
+    } catch (e) {
+      console.error("Failed to queue latest songs", e);
+    }
+  };
+
+  // ----------- GPT RECS -----------
+
   handleSongRecs = (e) => {
     e.preventDefault();
-
     const { recPrompt } = this.state;
     if (!recPrompt) return;
 
     axios
-      .post(`${API_BASE}/song-recs/`, { prompt: recPrompt })
+      .post(`${API_BASE}/song-recs/`, { prompt: recPrompt }, { withCredentials: true })
       .then((res) => {
-        // res.data is array of created Song rows
+        const created = res.data || [];
         this.setState((prev) => ({
-          details: [...prev.details, ...res.data],
-          // optional grouping (currently not used since GPTRecs wants prompt+songs)
-          gptRecs: [...prev.gptRecs, { prompt: recPrompt, songs: res.data }],
+          details: [...prev.details, ...created],
+          gptRecs: [...prev.gptRecs, { prompt: recPrompt, songs: created }],
           recPrompt: "",
         }));
+
         return this.queueLatest();
       })
-      .catch((err) => {
-        console.error("Failed to get GPT song recs", err);
-      });
+      .catch((err) => console.error("Failed to get GPT song recs", err));
+  };
+
+  // ----------- MESSAGE -----------
+
+  fetchMessage = () => {
+    axios
+      .get(`${API_BASE}/message/`)
+      .then((res) => this.setState({ message: res.data.text }))
+      .catch((err) => console.error(err));
   };
 
   render() {
-    const { loadingAuth, isAuthed, authError } = this.state;
+    const { loadingAuth, isAuthed, authError, selectedDevice } = this.state;
 
     return (
       <div className="App">
@@ -190,8 +187,9 @@ class App extends React.Component {
                         Get Recommendations
                       </button>
                     </div>
+
                     <small className="text-muted">
-                      GPT songs are saved to the database and shown in the list below.
+                      GPT songs are saved to the database and shown in the history below.
                     </small>
                   </div>
                 </div>
@@ -234,7 +232,13 @@ class App extends React.Component {
                   </div>
                 </div>
 
-                {isAuthed && <SpotifyPlayer />}
+                {isAuthed && (
+                  <SpotifyPlayer
+                    selectedDevice={selectedDevice}
+                    onDeviceChange={(id) => this.setState({ selectedDevice: id })}
+                    onSongSaved={this.refreshSongs}
+                  />
+                )}
 
                 <div className="my-4">
                   <button className="btn btn-success" onClick={this.fetchMessage}>
@@ -259,7 +263,8 @@ class App extends React.Component {
               <section className="card card-queueList">
                 <QueueList
                   items={this.state.details}
-                  colorForIndex={(i) => this.renderSwitch(i % 6)}
+                  onRefresh={this.refreshSongs}
+                  selectedDevice={selectedDevice}
                 />
               </section>
             </>

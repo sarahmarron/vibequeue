@@ -124,6 +124,11 @@ class SongView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class ClearSongs(APIView):
+    def post(self, request):
+        Song.objects.all().delete()
+        return Response({"ok": True}, status=status.HTTP_200_OK)
         
 def get_message(request):
     message = Message.objects.first()
@@ -181,7 +186,9 @@ class GPTSongRecView(APIView):
             title = s.get("title")
             artist = s.get("artist")
             if title and artist:
-                created_songs.append(Song.objects.create(title=title, artist=artist))
+                created_songs.append(
+                    Song.objects.create(title=title, artist=artist, source="gpt", prompt=prompt)
+                )
 
         serializer = SongSerializer(created_songs, many=True)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -253,3 +260,99 @@ class PlayPauseToggle(APIView):
             new_state = True
 
         return Response({"is_playing": new_state}, status=code2 or 200)
+
+
+
+#new 
+class ClearSongs(APIView):
+    def post(self, request, format=None):
+        Song.objects.all().delete()
+        return Response({"ok": True}, status=status.HTTP_200_OK)
+
+
+class QueueURI(APIView):
+    """
+    POST /queue-uri/
+    Body: { "uri": "spotify:track:...", "device_id": "optional" }
+    """
+    def post(self, request, format=None):
+        if not request.session.session_key:
+            request.session.create()
+
+        uri = request.data.get("uri")
+        device_id = request.data.get("device_id")
+
+        if not uri:
+            return Response({"error": "missing uri"}, status=status.HTTP_400_BAD_REQUEST)
+
+        code, data = spotify_add_to_queue(request.session.session_key, uri, device_id=device_id)
+        return Response(data or {}, status=code or status.HTTP_401_UNAUTHORIZED)
+
+
+class SaveManualSong(APIView):
+    def post(self, request, format=None):
+        title = (request.data.get("title") or "").strip()
+        artist = (request.data.get("artist") or "").strip()
+        uri = (request.data.get("uri") or "").strip()  # you accept it already
+
+        if not title or not artist:
+            return Response({"error": "missing title/artist"}, status=status.HTTP_400_BAD_REQUEST)
+
+        s = Song.objects.create(
+            title=title,
+            artist=artist,
+            source="manual",
+            prompt="Manual song search",
+        )
+        return Response(SongSerializer(s).data, status=status.HTTP_201_CREATED)
+
+
+
+class PlaySongFromHistory(APIView):
+    """
+    POST /songs/<id>/play/
+    Optional body: { "device_id": "..." }
+    """
+    def post(self, request, song_id, format=None):
+        if not request.session.session_key:
+            request.session.create()
+        session_key = request.session.session_key
+
+        device_id = request.data.get("device_id")
+        try:
+            song = Song.objects.get(id=song_id)
+        except Song.DoesNotExist:
+            return Response({"error": "Song not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        uri = spotify_search_track_uri(session_key, song.title, song.artist)
+        if not uri:
+            return Response({"error": "Could not find track on Spotify"}, status=status.HTTP_404_NOT_FOUND)
+
+        params = {"device_id": device_id} if device_id else None
+        body = {"uris": [uri]}
+        code, data = spotify_api_request(session_key, "PUT", "/me/player/play", json=body, params=params)
+        return Response(data or {}, status=code or status.HTTP_401_UNAUTHORIZED)
+
+
+class QueueSongFromHistory(APIView):
+    """
+    POST /songs/<id>/queue/
+    Optional body: { "device_id": "..." }
+    """
+    def post(self, request, song_id, format=None):
+        if not request.session.session_key:
+            request.session.create()
+        session_key = request.session.session_key
+
+        device_id = request.data.get("device_id")
+        try:
+            song = Song.objects.get(id=song_id)
+        except Song.DoesNotExist:
+            return Response({"error": "Song not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        uri = spotify_search_track_uri(session_key, song.title, song.artist)
+        if not uri:
+            return Response({"error": "Could not find track on Spotify"}, status=status.HTTP_404_NOT_FOUND)
+
+        code, data = spotify_add_to_queue(session_key, uri, device_id=device_id)
+        return Response(data or {}, status=code or status.HTTP_401_UNAUTHORIZED)
