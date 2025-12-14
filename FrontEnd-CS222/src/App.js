@@ -272,7 +272,10 @@ class App extends React.Component {
 
           {this.state.activeView === "journey" && (
             <section className="card card-graphView">
-              <GraphView items={this.state.details} />
+              <GraphView
+                songs={this.state.details}
+                gptRecs={this.state.gptRecs}
+              />
             </section>
           )}
         </main>
