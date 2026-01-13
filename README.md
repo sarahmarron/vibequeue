@@ -14,40 +14,6 @@ Our app is a full-stack web application that integrates a React frontend with a 
 # Technical Architecture
 <img width="903" height="583" alt="image" src="https://github.com/user-attachments/assets/fbcc7fc5-045a-43e1-8ac4-96fad972f5a9" />
 
-# Development roles and work
-### Radhe
-- I figured out how to implement the Spotify API through research on different websites and through YouTube videos. With the Spotify API, I was successfully able to allow the user to log into their Spotify account. I also implemented adding songs to the queue and playing and pausing music directly through the web app to the device. I also made it so you can search songs by name which gives the user a list similar to the spotify search and allows the user to play the song by pressing play on it through our web app. Most of this was backend work. I added some things to the frontend like the views for the search as well as a few buttons that allowed the play/pause to work.
-
-### Justin
-- Brainstormed and proposed the project idea to my team members
-- Functioned somewhat as a product manager, organizing the project structure and helping team members find roles and tasks
-- Created descriptive setup guide in README.md to facilitate easy startup for team members or project users
-- Enforced .env setup and .gitignore to keep the project more organized, removing junk files, etc.
-- Researched OpenAI API keys, creating one that team members could use
-- Integrated the OpenAI ChatGPT API with our project, creating a system prompt that outputs in JSON format in combination with the user prompt
-- Connected ChatGPT API calls with our database via JSON formatting of songs, allowing it to be compatible with the Spotify API
-- Created frontend components that allowed the user to enter a song prompt, which was sent to the database and reflected on our webpage
-- Removed redundant example components from the frontend and backend for improved MVP clarity
-- Created presentation slides and refined project README.md for final presentation
-
-### Sarah
-- Contributed to frontend structure and UI organization.
-- Set up database migrations
-- Helped establish backend–frontend data flow and tested endpoints.
-- Worked on frontend formatting with PromptBox components
-- Enabled the database to accept songs with timestamp, title, and artist
-- Implemented frontend display for GPT prompts and recommended songs.
-- Integrated Play and Pause functionality from the backend into the frontend UI.
-
-### Ethan
-- Improved website visual design and overall user experience
-- Designed and implemented an interactive “Song Journey” view that organizes recommendations into prompt-based buckets
-- Built client-side logic to detect and visualize relationships between prompts via shared songs
-- Developed expandable dropdown components to explore prompt histories and overlapping recommendations
-- Modularized frontend code to improve structure, readability, and maintainability
-- Simplified layouts and styling to enhance usability and clarity
-- Ensured responsive design and consistent behavior across devices
- 
 # Setup Guide 
 
 Local setup guide to run the React frontend and Django backend (Requires OpenAI API key, Spotify Developer App permissions/setup, and Spotify premium)
